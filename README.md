@@ -6,10 +6,10 @@
     ALL IN ONE RASPBERRY BASED MOBILE SMART HOME ENVIRONMENT 
     <br/>
     <br/>
-    <a href="https://pekaway.de/docs"><strong>Explore the docs »</strong></a>
+    <a target="_blank" href="https://pekaway.de/docs"><strong>Explore the docs »</strong></a>
     <br/>
     <br/>
-    <a href="https://demo.pekaway.de/">View Frontend Demo</a>
+    <a target="_blank" href="https://demo.pekaway.de/">View Frontend Demo</a>
   </p>
 </p>
 

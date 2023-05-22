@@ -23,7 +23,7 @@
   * [Manual](#manual)
   * [Installation Script](#installation)
 * [Software Stack](#usage)
-  * [Node-Red]
+  * [Node-RED]
   * [Python]
   * [communications]
 * [Hardware](#Hardware)
@@ -52,7 +52,7 @@ This project has resulted from a hobby DIY VAN project to combine the variety of
 
 We took care of a simple startup to make this project also accessible for non-programmers. Take a look at the Quickstarts. 
 
-For the developers is a Node-Red backend and various Python scripts for expansion and improvement ready. 
+For the developers is a Node-RED backend and various Python scripts for expansion and improvement ready. 
 
 <p align="left">
     <a href="https://vanpi.de"><img src="https://github.com/KarlPekaway/VAN-PI/blob/main/assets/shop.jpg" alt="Logo" width="100"> </a>
@@ -92,30 +92,30 @@ For the developers is a Node-Red backend and various Python scripts for expansio
     - JBD BMS UART PORT
   
   - analog Shunt:<br>
-    - Measuring the voltage drop across a SHUNT using the ads1115 on the VAN PI relay board and the VAN PI HAT. Voltage measurement via a voltage divider. Readout via Pythonscript, data is sent to Node-Red via a BottleWebserver. (data remain in the RAM and are written to the SD only every 5min).  
+    - Measuring the voltage drop across a SHUNT using the ads1115 on the VAN PI relayboard and the VAN PI HAT. Voltage measurement is done using a voltage divider. A Python script reads the data and makes it accessible by providing a Bottle webserver (port 8080), Node-RED then checks the endpoint(s) to get the values. Data remains in the RAM and is written to the SD-Card every 5min.
   
   
   - ESP32-C3 INA226 SHUNT: <br>
-    - standalone Esp32-c3 based WIFI Shunt. Measure the current, SOC, Battery Voltage. MQTT and BLE are to be supported  **in development**
+    - standalone Esp32-c3 based WIFI Shunt. Measures the current, SOC, Battery Voltage. MQTT and BLE will be supported  **in development**
   
   
   ## Water
   - resistance sensor:<br>
-  on the Relayboard and the HAT is a voltage divider section to read the variable resistance of any resistance Sensor you want. It uses the same ads1115 as the analog shunt. The Shunt Pythonscript reads also the ads1115 fot the waterlevel. 
+  on the Relayboard and the HAT is a voltage divider section to read the variable resistance of any resistance sensor you want to use. It uses the same ADS1115 as the analog shunt. The shunt Pythonscript also reads the ads1115 fot the waterlevels. 
   - capacitve sensor:<br>
-  The Relayboard and the HAT has a jumper section to remove the voltage divider section to read directly voltage up to 3.3V to the ADS1115. 
+  The Relayboard and the HAT have a jumper section to remove the voltage divider section to read voltage directly up to 3.3V to the ADS1115. 
   typical sensors:
     - Votronic FL
     - Votronic 15-50K, 12-24K 
     - CBE sensors
     
   - Flow sensors:<br>
-  you can also connect flowsensors to the system via a gpio. it is read out in Node-Red directly
+  you can also connect flow sensors with gpio. Node-RED will then access the sensors directly).
   
   - other: <br>
     - Gobius Pro **in development** 
     
-  - TOP/Bottom calibration, Votronic direct calibration (2,4V), 10 Point Calibration **in development**
+  - Top/Bottom calibration, Votronic direct calibration (2,4V), 10 Point Calibration **in development**
     
   
   ## Heater
@@ -124,26 +124,25 @@ For the developers is a Node-Red backend and various Python scripts for expansio
  - Webasto W-Bus <=3.5 - *tested with a Thermo Top V water heater* 
  - Chinese Diesel Heater *blue wire* - Arduino NANO Serial Interface
  - Truma INET **in development**
- - LF BROS via 433mhz 
+ - LF BROS via 433mhz (needs to be activated in the backend since v1.1.0, WiringPI may need to be installed)
  
    
   ## Displays
   
   - HDMI: <br>
-  we are using a headless system on the official release. But you can install our system on any desktop version via the install script and then use the normal webinterface as your display 
+  VAN PI OS is based on a headless Debian/Raspbian image. You can install the software stack on Ubuntu/Debian based desktop versions with the install script and then use the normal webinterface as your display. Please be aware that manual adjustments may need to be done.
   
   - Nextion via UART:<br>
   
-  with our RJ45 UART adapter we can connect a Nextion display to the system via an RJ45 ethernet cable. It provides 5V DC and the 3.3V UART for the communication. We do not have an official VAN PI Nextion Image yet. You can find information about the protocol in the docs to build your own .tft file. 
+  With the RJ45 UART adapter we can connect a Nextion display to the Relayboard/HAT via an RJ45 ethernet cable. It provides 5V DC and 3.3V UART for communication. We do not have an official VAN PI Nextion image yet. You can find information about the protocol in the docs to build your own .tft file. 
   
   - Sonoff NS Wifi Panel: <br>
-   We support the NS Panel and hat setup a special VAN PI TFT file for. The Data is send via MQTT. Please check this installation quide **in development**
- 
+   We support the NS Panel and have prepared a VAN PI tft file for it. The data is send with MQTT. Please check this installation quide **in development** 
  
 
 # VANPI HARDWARE
 
-## Rekayboard
+## Relayboard
 
 ## HAT
 
@@ -189,7 +188,7 @@ For the developers is a Node-Red backend and various Python scripts for expansio
 
 #Software
 
-## Node-Red
+## Node-RED
 
 ## Python 
 

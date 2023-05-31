@@ -49,23 +49,37 @@
 
 This project has resulted from a hobby DIY VAN project to combine the variety of displays and hardware in the VAN and caravan area and to make the easy installation possible. 
 
+Everything is built around the Raspberry PI, both software and hardware. 
+
+
 We took care of a simple startup to make this project also accessible for non-programmers. Take a look at the Quickstarts. 
 
 For the developers is a Node-RED backend and various Python scripts for expansion and improvement ready. 
 
-<p align="left">
-    <a href="https://vanpi.de"><img src="https://github.com/KarlPekaway/VAN-PI/blob/main/assets/shop.jpg" alt="Logo" width="100"> </a>
- </p>
  
 **you can find the hardware for this project in our store, or just built it yourself**
+
+<p align="left">
+    <a href="https://vanpi.de"><img src="https://github.com/Pekaway/VAN_PI/blob/main/assets/shop.png?raw=true" alt="Logo" width="100"> </a>
+ </p>
+ 
+[SHOP NOW](https://www.vanpi.de)
+
+
+# Releases
+
+## VAN PI OS 1.1.0
+
  
 # Getting started
+
 ## Quickstart
 
-- [QUICKSTART HAT](https://github.com/KarlPekaway/VAN-PI/blob/main/Quickstarts/ENG_VanPiHat_Quickstart.pdf)
-- [QUICKSTART Relayboard](https://github.com/KarlPekaway/VAN-PI/blob/main/Quickstarts/ENG_VanPiRelayboard_Quickstart.pdf)
-- [QUICKSTART Dimmy](https://github.com/KarlPekaway/VAN-PI/blob/main/Quickstarts/ENG_PekawayDIMMY_Quickstart.pdf)
-- [QUICKSTART Dimmy](https://github.com/KarlPekaway/VAN-PI/blob/main/Quickstarts/ENG_VanPiShunt_Quickstart.pdf)
+- [QUICKSTART HAT](https://github.com/Pekaway/VAN_PI/blob/main/Hardware/HAT/ENG_VanPiHat_Quickstart.pdf)
+- [QUICKSTART Relayboard](https://github.com/Pekaway/VAN_PI/blob/main/Hardware/Relayboard/ENG_VanPiRelayboard_Quickstart.pdf)
+- [QUICKSTART Dimmy]
+- [QUICKSTART Shunt]
+
 
 
 
@@ -73,15 +87,19 @@ For the developers is a Node-RED backend and various Python scripts for expansio
 
 ## Manual
 
-- [VAN PI SYSTEM MANUAL](https://github.com/KarlPekaway/VAN-PI/blob/main/Manual/Manuel%20VANPI%201.2.pdf)
+- [VAN PI SYSTEM MANUAL](https://github.com/Pekaway/VAN_PI/blob/main/Manual/Manuel%20VANPI%201.2.pdf)
 
 
 ## Installation Script
 
+If you don't want to use the system as a headless system you can use our installation script. 
+
+
 # Supported Devices
-  ## Battery
+ ## Battery
   - Bluetooth BMS:<br>
     - JBD BMS SYSTEMS e.g. Liontron Batterys 
+		    - dual setup possible check our tutorial page
     - DALY BMS (in development)
     - VICTRON SMART SHUNT BLE **in development**
   - wired:<br>
@@ -99,6 +117,7 @@ For the developers is a Node-RED backend and various Python scripts for expansio
   
   
   ## Water
+
   - resistance sensor:<br>
   on the Relayboard and the HAT is a voltage divider section to read the variable resistance of any resistance sensor you want to use. It uses the same ADS1115 as the analog shunt. The shunt Pythonscript also reads the ads1115 fot the waterlevels. 
   - capacitve sensor:<br>
@@ -110,14 +129,20 @@ For the developers is a Node-RED backend and various Python scripts for expansio
     
   - Flow sensors:<br>
   you can also connect flow sensors with gpio. Node-RED will then access the sensors directly).
+  We have examples in our tutorial collection. Maybe there will be a fixed integration in the VAN PI OS soon. 
+ 
   
   - other: <br>
-    - Gobius Pro **in development** 
-    
-  - Top/Bottom calibration, Votronic direct calibration (2,4V), 10 Point Calibration **in development**
+    - Gobius Pro **in development**    
+   
+- Calibration methods:
+   - top/bottom calibration, 
+   - Votronic direct calibration (2,4V)
+   - set resistance
+   - 10 point calibration **in development**
     
   
-  ## Heater
+ ## Heater
   
  - Autoterm 2D/4D (twin kit **in development**)
  - Webasto W-Bus <=3.5 - *tested with a Thermo Top V water heater* 
@@ -137,15 +162,23 @@ For the developers is a Node-RED backend and various Python scripts for expansio
   
   - Sonoff NS Wifi Panel: <br>
    We support the NS Panel and have prepared a VAN PI tft file for it. The data is send with MQTT. Please check this installation quide **in development** 
+
+## Other
+ 
+ - MaxxFan
+	 - wired
+	 - IR
+
+- GOK Senso4s
  
 
 # VANPI HARDWARE
 
-## Relayboard
+## Relayboard PCB
 
-## HAT
+## HAT PCB
 
-## SHUNT
+## SHUNT 100A/200A/300A
 
 ## RJ45 UART
 
@@ -155,11 +188,9 @@ For the developers is a Node-RED backend and various Python scripts for expansio
 
 ## USB JST
 
+## Dimmy PCB
+
 ## ESP32-C3 Shunt
-
-## Dimmy Mosfetboard
-
-## Touchsreen
 
 ## ESP32-C3 LIN BUS
 
@@ -172,20 +203,23 @@ For the developers is a Node-RED backend and various Python scripts for expansio
 | VAN PI HAT | active |- | all VAN PI Hardware | - | V1.1.0b2 |
 | VAN PI SHUNT | active | - | VAN PI OS & VAN PI HAT <br> VAN PI RELAYBOARD | - | - |
 | VAN PI RJ45 UART | active |  - | VAN PI OS | - | - |
-| VAN PI USB AUTOTERM  | actice | - | VAN PI OS | - | V1.1.0b2 |
+| VAN PI JST USB AUTOTERM  | actice | - | VAN PI OS | - | V1.1.0b2 |
 | VAN PI USB K-line  (Webasto)| actice | - | VAN PI OS | - | V1.1.0b2 |
 | VAN PI USB UART JST (Victron)| actice | - | VAN PI OS |
-| VAN PI ESP32-c3 Shunt | in development | VAN PI SHUNT32  | VAN PI OS / MQTT | VANPI SHUNT32 1.0 |
-| VAN PI Dimmy | active | PekawayMota / I2C | VAN PI OS / MQTT | PekawayMota 1.1 |  -
-| VAN PI Touchscreen (nextion)| in development | VAN PI NEXTSCREEN |VAN PI OS <br> Node-red <br> Nextion HMI | - | - |
+| VAN PI Dimmy | active | PekawayMota / I2C / Standalone | VAN PI OS / MQTT | PekawayMota 1.1 |  -
 | DS18B20 | active | VAN PI OS  |  one wire bus - Rasbpberry |
 | resistance tank sensor | active | VAN PI OS | VAN PI HAT <br> VAN PI RELAYBOARD |  - | - |
 | capacitve tank sensor | active | VAN PI OS | VAN PI HAT <br> VAN PI RELAYBOARD |  - | - |
 | ESP32-c3 LIN BUS | in development | VAN PI LIN32 | VAN PI OS / MQTT |  - | - |
+| VAN PI ESP32-c3 Shunt | in development | VAN PI SHUNT32  | VAN PI OS / MQTT | VANPI SHUNT32 1.0 
+
+## compatible PEKAWAY hardware
+- Pekaway Touchdisplay 
+- Pekaway IOT Bridge
 
 
 
-#Software
+# Software
 
 ## Node-RED
 
@@ -198,14 +232,24 @@ For the developers is a Node-RED backend and various Python scripts for expansio
 
 # FLASHTOOLS
 
-Here you can find some tools to flash your Hardware. 
- 
-## Online Flasher
+Here you can flash your ESPs with our Hardware . 
 
-## Onboard Flasher
+[ONLINE FLASHER](https://flashesp.pekaway.de)
+
+Onboard Flasher
 
 ## SD IMAGE burn 
+We recommend to burn the images [Balena Etcher](https://www.balena.io/etcher/) or [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/)
+
 
 ## Patreon
+
+We run a german patreon account. We will spend the money collected there on communtity events and hackathons. 
+
+If you like our project please support it there. 
+
+[VAN PI by Pekaway | All In One Campercontrol System | Patreon](https://www.patreon.com/vanpibypekaway)
+
+
 
 

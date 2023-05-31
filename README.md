@@ -1,4 +1,4 @@
-<br/>
+
 <p align="center">
     <img src="https://odoo15.pekaway.de/docimages/logo/vanpi_logo.png" alt="Logo" >
 
@@ -6,12 +6,11 @@
     ALL IN ONE RASPBERRY BASED MOBILE SMART HOME ENVIRONMENT 
     <br/>
     <br/>
-    <a target="_blank" href="https://pekaway.de/docs"><strong>Explore the docs »</strong></a>
+    <a target="_blank" href="https://github.com/Pekaway/VAN_PI/wiki"><strong>Explore the docs »</strong></a>
     <br/>
     <br/>
     <a target="_blank" href="https://demo.pekaway.de/">View Frontend Demo</a>
   </p>
-</p>
 
 
 

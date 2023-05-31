@@ -1,0 +1,420 @@
+{
+    "bridge": {
+        "name": "VanPi Homebridge",
+        "username": "A9:53:4E:E6:83:E7",
+        "port": 51203,
+        "pin": "226-54-863"
+    },
+    "accessories": [
+        {
+            "type": "switch",
+            "name": "Relay 1",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/relay1/POWER",
+                "setOn": "home/cmnd/relay1/POWER"
+            },
+            "otherValueOff": false,
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Relay 2",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/relay2/POWER",
+                "setOn": "home/cmnd/relay2/POWER"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Relay 3",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/relay3/POWER",
+                "setOn": "home/cmnd/relay3/POWER"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Relay 4",
+            "url": "http://localhost:1883",
+            "logMqtt": false,
+            "topics": {
+                "getOn": "pkw/cmnd/relay4/POWER",
+                "setOn": "home/cmnd/relay4/POWER"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Relay 5",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/relay5/POWER",
+                "setOn": "home/cmnd/relay5/POWER"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Relay 6",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/relay6/POWER",
+                "setOn": "home/cmnd/relay6/POWER"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Relay 7",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/relay7/POWER",
+                "setOn": "home/cmnd/relay7/POWER"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Relay 8",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/relay8/POWER",
+                "setOn": "home/cmnd/relay8/POWER"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Relay 9",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/relay9/POWER",
+                "setOn": "home/cmnd/relay9/POWER"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Relay 10",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/relay10/POWER",
+                "setOn": "home/cmnd/relay10/POWER"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "temperatureSensor",
+            "name": "Temperature 1",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getCurrentTemperature": "pkw/temp1/temp"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "temperatureSensor",
+            "name": "Temperature 2",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getCurrentTemperature": "pkw/temp2/temp"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "temperatureSensor",
+            "name": "Temperature 3",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getCurrentTemperature": "pkw/temp3/temp"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "temperatureSensor",
+            "name": "Temperature 4",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getCurrentTemperature": "pkw/temp4/temp"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Wifi-Relay 1",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/wrelay1/POWER",
+                "setOn": "home/cmnd/wrelay1/POWER"
+            },
+            "onValue": "ON",
+            "offValue": "OFF",
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Wifi-Relay 2",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/wrelay2/POWER",
+                "setOn": "home/cmnd/wrelay2/POWER"
+            },
+            "onValue": "ON",
+            "offValue": "OFF",
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Wifi-Relay 3",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/wrelay3/POWER",
+                "setOn": "home/cmnd/wrelay3/POWER"
+            },
+            "onValue": "ON",
+            "offValue": "OFF",
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Wifi-Relay 4",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/wrelay4/POWER",
+                "setOn": "home/cmnd/wrelay4/POWER"
+            },
+            "onValue": "ON",
+            "offValue": "OFF",
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Wifi-Relay 5",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/wrelay5/POWER",
+                "setOn": "home/cmnd/wrelay5/POWER"
+            },
+            "onValue": "ON",
+            "offValue": "OFF",
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Wifi-Relay 6",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/wrelay6/POWER",
+                "setOn": "home/cmnd/wrelay6/POWER"
+            },
+            "onValue": "ON",
+            "offValue": "OFF",
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Wifi-Relay 7",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/wrelay7/POWER",
+                "setOn": "home/cmnd/wrelay7/POWER"
+            },
+            "onValue": "ON",
+            "offValue": "OFF",
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "switch",
+            "name": "Wifi-Relay 8",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getOn": "pkw/cmnd/wrelay8/POWER",
+                "setOn": "home/cmnd/wrelay8/POWER"
+            },
+            "onValue": "ON",
+            "offValue": "OFF",
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "humiditySensor",
+            "name": "Waterlevel 1",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getCurrentRelativeHumidity": "pkw/Level1/level"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "humiditySensor",
+            "name": "Waterlevel 2",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getCurrentRelativeHumidity": "pkw/Level2/level"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "humiditySensor",
+            "name": "Waterlevel 3",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getCurrentRelativeHumidity": "pkw/Level3/level"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "humiditySensor",
+            "name": "Waterlevel 4",
+            "url": "http://localhost:1883",
+            "topics": {
+                "getCurrentRelativeHumidity": "pkw/Level4/level"
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "lightbulb-Dimmable",
+            "name": "Dimmer1",
+            "topics": {
+                "getOn": "pkw/stat/mosfetboard/dimmer0/state",
+                "getBrightness": {
+                    "topic": "pkw/stat/mosfetboard/dimmer0/bri"
+                },
+                "setOn": "home/cmnd/dimmer0/driver15",
+                "setBrightness": {
+                    "topic": "home/cmnd/dimmer0/driver15/set",
+                    "apply": "return JSON.stringify({brightness: message});"
+                }
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "lightbulb-Dimmable",
+            "name": "Dimmer2",
+            "topics": {
+                "getOn": "pkw/stat/mosfetboard/dimmer1/state",
+                "getBrightness": {
+                    "topic": "pkw/stat/mosfetboard/dimmer1/bri"
+                },
+                "setOn": "home/cmnd/dimmer1/driver15",
+                "setBrightness": {
+                    "topic": "home/cmnd/dimmer1/driver15/set",
+                    "apply": "return JSON.stringify({brightness: message});"
+                }
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "lightbulb-Dimmable",
+            "name": "Dimmer3",
+            "topics": {
+                "getOn": "pkw/stat/mosfetboard/dimmer2/state",
+                "getBrightness": {
+                    "topic": "pkw/stat/mosfetboard/dimmer2/bri"
+                },
+                "setOn": "home/cmnd/dimmer2/driver15",
+                "setBrightness": {
+                    "topic": "home/cmnd/dimmer2/driver15/set",
+                    "apply": "return JSON.stringify({brightness: message});"
+                }
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "lightbulb-Dimmable",
+            "name": "Dimmer4",
+            "topics": {
+                "getOn": "pkw/stat/mosfetboard/dimmer3/state",
+                "getBrightness": {
+                    "topic": "pkw/stat/mosfetboard/dimmer3/bri"
+                },
+                "setOn": "home/cmnd/dimmer3/driver15",
+                "setBrightness": {
+                    "topic": "home/cmnd/dimmer3/driver15/set",
+                    "apply": "return JSON.stringify({brightness: message});"
+                }
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "lightbulb-Dimmable",
+            "name": "Dimmer5",
+            "topics": {
+                "getOn": "pkw/stat/mosfetboard/dimmer4/state",
+                "getBrightness": {
+                    "topic": "pkw/stat/mosfetboard/dimmer4/bri"
+                },
+                "setOn": "home/cmnd/dimmer4/driver15",
+                "setBrightness": {
+                    "topic": "home/cmnd/dimmer4/driver15/set",
+                    "apply": "return JSON.stringify({brightness: message});"
+                }
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "lightbulb-Dimmable",
+            "name": "Dimmer6",
+            "topics": {
+                "getOn": "pkw/stat/mosfetboard/dimmer5/state",
+                "getBrightness": {
+                    "topic": "pkw/stat/mosfetboard/dimmer5/bri"
+                },
+                "setOn": "home/cmnd/dimmer5/driver15",
+                "setBrightness": {
+                    "topic": "home/cmnd/dimmer5/driver15/set",
+                    "apply": "return JSON.stringify({brightness: message});"
+                }
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "lightbulb-Dimmable",
+            "name": "Dimmer7",
+            "topics": {
+                "getOn": "pkw/stat/mosfetboard/dimmer6/state",
+                "getBrightness": {
+                    "topic": "pkw/stat/mosfetboard/dimmer6/bri"
+                },
+                "setOn": "home/cmnd/dimmer6/driver15",
+                "setBrightness": {
+                    "topic": "home/cmnd/dimmer6/driver15/set",
+                    "apply": "return JSON.stringify({brightness: message});"
+                }
+            },
+            "accessory": "mqttthing"
+        },
+        {
+            "type": "lightbulb-Dimmable",
+            "name": "Dimmer8",
+            "topics": {
+                "getOn": "pkw/stat/mosfetboard/dimmer7/state",
+                "getBrightness": {
+                    "topic": "pkw/stat/mosfetboard/dimmer7/bri"
+                },
+                "setOn": "home/cmnd/dimmer7/driver15",
+                "setBrightness": {
+                    "topic": "home/cmnd/dimmer7/driver15/set",
+                    "apply": "return JSON.stringify({brightness: message});"
+                }
+            },
+            "accessory": "mqttthing"
+        }
+    ],
+    "platforms": [
+        {
+            "name": "Config",
+            "port": 8581,
+            "auth": "form",
+            "theme": "auto",
+            "tempUnits": "c",
+            "lang": "auto",
+            "loginWallpaper": "~/bghomebridge.jpg",
+            "platform": "config"
+        }
+    ]
+}

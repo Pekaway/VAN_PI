@@ -206,5 +206,6 @@ Here you can find some tools to flash your Hardware.
 
 ## SD IMAGE burn 
 
+## Patreon
 
 

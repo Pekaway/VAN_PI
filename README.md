@@ -17,32 +17,15 @@
 ## Table Of Contents
 
 * [About the Project](#about-the-project)
+* [Releases](#Releases)
 * [Getting started](#getting-started)
-  * [Quickstart](#prerequisites)
-  * [Manual](#manual)
-  * [Installation Script](#installation)
-* [Software Stack](#usage)
-  * [Node-RED]
-  * [Python]
-  * [communications]
-* [Hardware](#Hardware)
-  * [Introduction]
-  * [HAT]
-  * [Relayboard]
-  * [Dimmy]
-  * [GPIO expander]
-  * [WIFI Relays]
-* [Supported Devices](#devices)
-  * [Battery]
-  * [Water]
-  * [Heater]
-  * [other]
- * [Mobile App](#mobile APP)
+* [Supported Devices](#Supported-Devices)
+* [VAN PI Hardware](#VAN-PI-Hardware)
+* [Software](#Software)
+* [Flashtools](#Flashtools)
+* [Support the Project](#Support-the-Project)
 
-* [Hardware/Project-Overview](#Hardware/Project-Overview) 
-* [License](#license)
-* [Authors](#authors)
-* [Acknowledgements](#acknowledgements)
+
 
 
 ## About The Project
@@ -172,7 +155,7 @@ If you don't want to use the system as a headless system you can use our install
 - GOK Senso4s
  
 
-# VANPI HARDWARE
+# VAN PI Hardware
 
 ## Relayboard PCB
 
@@ -242,7 +225,9 @@ Onboard Flasher
 We recommend to burn the images [Balena Etcher](https://www.balena.io/etcher/) or [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/)
 
 
-## Patreon
+# Support the Project
+
+## Patreon 
 
 We run a german patreon account. We will spend the money collected there on communtity events and hackathons. 
 
@@ -250,6 +235,10 @@ If you like our project please support it there.
 
 [VAN PI by Pekaway | All In One Campercontrol System | Patreon](https://www.patreon.com/vanpibypekaway)
 
+## Socials 
+
+
+## Share your Code
 
 
 

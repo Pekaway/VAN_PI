@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="https://odoo15.pekaway.de/docimages/logo/vanpi_logo.png" alt="Logo" >
+    <img src="https://cdn.shopify.com/s/files/1/0755/7287/1503/articles/Logo_VanPi_final_gerade_gefullt_gross_a3bb7c0b-3c40-4380-8de0-9bd17f1bb474.png?v=1685625313&width=800" alt="Logo" >
 
   <p align="center">
     ALL IN ONE RASPBERRY BASED MOBILE SMART HOME ENVIRONMENT 
@@ -30,14 +30,14 @@
 
 ## About The Project
 
-This project has resulted from a hobby DIY VAN project to combine the variety of displays and hardware in the VAN and caravan area and to make the easy installation possible. 
+This project has resulted from a hobby DIY VAN project to combine the variety of displays and hardware in the VAN and caravan area and to make the easy installation possible.
 
-Everything is built around the Raspberry PI, both software and hardware. 
+Everything is built around the Raspberry PI, both software and hardware.
 
 
-We took care of a simple startup to make this project also accessible for non-programmers. Take a look at the Quickstarts. 
+We took care of a simple startup to make this project also accessible for non-programmers. Take a look at the Quickstarts.
 
-For the developers is a Node-RED backend and various Python scripts for expansion and improvement ready. 
+For the developers is a Node-RED backend and various Python scripts for expansion and improvement ready.
 
  
 **you can find the hardware for this project in our store, or just built it yourself**
@@ -75,13 +75,13 @@ For the developers is a Node-RED backend and various Python scripts for expansio
 
 ## Installation Script
 
-If you don't want to use the system as a headless system you can use our installation script. 
+If you don't want to use the system as a headless system you can use our installation script.
 
 
 # Supported Devices
  ## Battery
   - Bluetooth BMS:<br>
-    - JBD BMS SYSTEMS e.g. Liontron Batterys 
+    - JBD BMS SYSTEMS e.g. Liontron Batterys
 		    - dual setup possible check our tutorial page
     - DALY BMS (in development)
     - VICTRON SMART SHUNT BLE **in development**
@@ -107,7 +107,7 @@ If you don't want to use the system as a headless system you can use our install
   The Relayboard and the HAT have a jumper section to remove the voltage divider section to read voltage directly up to 3.3V to the ADS1115. 
   typical sensors:
     - Votronic FL
-    - Votronic 15-50K, 12-24K 
+    - Votronic 15-50K, 12-24K
     - CBE sensors
     
   - Flow sensors:<br>
@@ -116,10 +116,10 @@ If you don't want to use the system as a headless system you can use our install
  
   
   - other: <br>
-    - Gobius Pro **in development**    
+    - Gobius Pro **in development**
    
 - Calibration methods:
-   - top/bottom calibration, 
+   - top/bottom calibration,
    - Votronic direct calibration (2,4V)
    - set resistance
    - 10 point calibration **in development**
@@ -128,7 +128,7 @@ If you don't want to use the system as a headless system you can use our install
  ## Heater
   
  - Autoterm 2D/4D (twin kit **in development**)
- - Webasto W-Bus <=3.5 - *tested with a Thermo Top V water heater* 
+ - Webasto W-Bus <=3.5 - *tested with a Thermo Top V water heater*
  - Chinese Diesel Heater *blue wire* - Arduino NANO Serial Interface
  - Truma INET **in development**
  - LF BROS via 433mhz (needs to be activated in the backend since v1.1.0, WiringPI may need to be installed)
@@ -197,7 +197,7 @@ If you don't want to use the system as a headless system you can use our install
 | VAN PI ESP32-c3 Shunt | in development | VAN PI SHUNT32  | VAN PI OS / MQTT | VANPI SHUNT32 1.0 
 
 ## compatible PEKAWAY hardware
-- Pekaway Touchdisplay 
+- Pekaway Touchdisplay
 - Pekaway IOT Bridge
 
 
@@ -206,41 +206,33 @@ If you don't want to use the system as a headless system you can use our install
 
 ## Node-RED
 
-Test
-
-## Python 
+## Python
 
 ## Communictation
 
-## Other 
+## Other
 
 
 # FLASHTOOLS
 
-Here you can flash your ESPs with our Hardware . 
+Here you can flash your ESPs with our Hardware .
 
 [ONLINE FLASHER](https://flashesp.pekaway.de)
 
 Onboard Flasher
 
-## SD IMAGE burn 
-We recommend to burn the images [Balena Etcher](https://www.balena.io/etcher/) or [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/)
+## SD IMAGE flash
+We recommend to flash the images [Balena Etcher](https://www.balena.io/etcher/) or [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/)
 
 
 # Support the Project
 
-## Patreon 
+## Patreon
 
-We run a german patreon account. We will spend the money collected there on communtity events and hackathons. 
+We run a german patreon account on which we publish further tutorials. These Tutorials will be uploaded to our public homepage about 6 months later.
 
-If you like our project please support it there. 
+If you like our project feel free to support it:
 
 [VAN PI by Pekaway | All In One Campercontrol System | Patreon](https://www.patreon.com/vanpibypekaway)
 
-## Socials 
-
-
-## Share your Code
-
-
-
+## Socials

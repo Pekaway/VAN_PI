@@ -206,6 +206,8 @@ If you don't want to use the system as a headless system you can use our install
 
 ## Node-RED
 
+Test
+
 ## Python 
 
 ## Communictation

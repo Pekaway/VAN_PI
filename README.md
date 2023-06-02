@@ -1,21 +1,20 @@
 
 <p align="center">
-    <img src="https://cdn.shopify.com/s/files/1/0755/7287/1503/articles/Logo_VanPi_final_gerade_gefullt_gross_a3bb7c0b-3c40-4380-8de0-9bd17f1bb474.png?v=1685625313&width=800" alt="Logo" >
+    <img src="https://raw.githubusercontent.com/Pekaway/VAN_PI/main/assets/logo/vanpi_logo.png" alt="Logo" >
 
   <p align="center">
-    ALL IN ONE RASPBERRY BASED MOBILE SMART HOME ENVIRONMENT 
+    ALL IN ONE RASPBERRY BASED MOBILE SMART HOME ENVIRONMENT
     <br/>
     <br/>
-    <a target="_blank" href="https://github.com/Pekaway/VAN_PI/wiki"><strong>Explore the docs »</strong></a>
+    <a target="_blank" href="https://github.com/Pekaway/VAN_PI/wiki"><strong>Explore the docs</strong></a>
     <br/>
     <br/>
     <a target="_blank" href="https://demo.pekaway.de/">View Frontend Demo</a>
     <br/>
     <br/>
-    <a target="_blank" href="https://github.com/Pekaway/VAN_PI/wiki">Documentation</a>
   </p>
 
-### This repository is currently under construction and not yet finished
+  <p align="center">### This repository is currently under construction and not yet finished!</p>
 
 ## Table Of Contents
 

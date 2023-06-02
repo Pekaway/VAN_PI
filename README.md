@@ -10,9 +10,12 @@
     <br/>
     <br/>
     <a target="_blank" href="https://demo.pekaway.de/">View Frontend Demo</a>
+    <br/>
+    <br/>
+    <a target="_blank" href="https://github.com/Pekaway/VAN_PI/wiki">Documentation</a>
   </p>
 
-
+### This repository is currently under construction and not yet finished
 
 ## Table Of Contents
 

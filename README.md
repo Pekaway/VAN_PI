@@ -140,7 +140,7 @@ If you don't want to use the system as a headless system you can use our install
   
   - Web interface: <br>
 
-Using the Node-Red web interface, any device can be used as a display. Here it can be reached under Http://"IP":1880/ui or alternatively under http://van.pi.
+Using the Node-Red web interface, any device can be used as a display. Here it can be reached under http://"IP":1880/ui or alternatively under http://van.pi.
   
   - HDMI: <br>
   VAN PI OS is based on a headless Debian/Raspbian image. You can install the software stack on Ubuntu/Debian based desktop versions with the install script and then use the normal webinterface as your display. Please be aware that manual adjustments may need to be done.

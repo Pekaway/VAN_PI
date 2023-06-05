@@ -189,8 +189,8 @@ Using the Node-Red web interface, any device can be used as a display. Here it c
 
 | Hardware | Satus | Software | compatible devices | current stable version | current beta |
 |----------|----------|----------|----------|----------| ----------|
-| VAN PI RELAY BOARD | actice | VAN PI OS | all VAN PI Hardware  | v1.1.4 | v1.1.0b2 |
-| VAN PI HAT | active |- | all VAN PI Hardware | v1.1.4 | v1.1.0b2 |
+| VAN PI RELAY BOARD | actice | VAN PI OS | all VAN PI Hardware  | v1.1.1 | v1.1.0b2 |
+| VAN PI HAT | active |- | all VAN PI Hardware | v1.1.1 | v1.1.0b2 |
 | VAN PI SHUNT | active | - | VAN PI OS & VAN PI HAT <br> VAN PI RELAYBOARD | - | - |
 | VAN PI RJ45 UART | active |  - | VAN PI OS | - | - |
 | VAN PI JST USB AUTOTERM  | actice | - | VAN PI OS | - | v1.1.0b2 |

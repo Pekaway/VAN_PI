@@ -12,6 +12,7 @@
     <a target="_blank" href="https://demo.pekaway.de/">View Frontend Demo</a>
     <br/>
     <br/>
+    <a target="_blank" href="https://forum.pekaway.de/">Forum</a>
   </p>
 
   <p align="center">### This repository is currently under construction and not yet finished!</p>
@@ -227,7 +228,7 @@ VanPi OS offers a HTTP and a MQTT API, which can be used to read and write data.
 
 Here you can flash your ESPs with our preconfigured software [pekawayMOTA](https://github.com/Pekaway/VAN_PI/wiki/pekawaymota) .
 
-[ONLINE FLASHER](https://flashesp.pekaway.de) - connect your ESP via USB to your computer and use Google Chrome to flash the device using the online flasher.
+[Online flasher](https://flashesp.pekaway.de) - connect your ESP via USB to your computer and use Google Chrome to flash the device using the online flasher.
 
 Onboard Flasher - You'll find it in the webinterface of the VanPi OS, go to config > system > flashtool. It'll start a different set of flows which will allow you to flash your ESP device when it is connected directly to the Raspberry Pi.
 
@@ -239,10 +240,11 @@ We recommend to flash the images with either [Balena Etcher](https://www.balena.
 
 ## Patreon
 
-We run a german patreon account on which we publish further tutorials. These Tutorials will be uploaded to our public homepage about 6 months later.
+We run a german patreon account on which we publish further tutorials. These tutorials will be uploaded to our public homepage about 6 months later.
 
 If you like our project feel free to support it:
 
 [VAN PI by Pekaway | All In One Campercontrol System | Patreon](https://www.patreon.com/vanpibypekaway)
 
-## Socials
+## Links
+<a target="_blank" href="https://forum.pekaway.de/">Forum</a> --- <a target="_blank" href="https://instagram.com/peka.way">Instagram</a> --- <a target="_blank" href="https://vanpi.de">Homepage</a> --- <a href="https://www.youtube.com/channel/UCS6Vaan7JFox6euCvOEycmA">YouTube</a> --- <a href="https://vanpi.de/pages/contact">Contact</a>

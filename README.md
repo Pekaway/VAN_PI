@@ -182,21 +182,21 @@ If you don't want to use the system as a headless system you can use our install
 
 ## Hardware/Project-Overview
 
-| Hardware | Satus | Software | compatible devices | current stable version | current beta | 
+| Hardware | Satus | Software | compatible devices | current stable version | current beta |
 |----------|----------|----------|----------|----------| ----------|
-| VAN PI RELAY BOARD | actice | VAN PI OS | all VAN PI Hardware  | V 1.0.4 | V1.1.0b2 |
-| VAN PI HAT | active |- | all VAN PI Hardware | - | V1.1.0b2 |
+| VAN PI RELAY BOARD | actice | VAN PI OS | all VAN PI Hardware  | v1.1.4 | v1.1.0b2 |
+| VAN PI HAT | active |- | all VAN PI Hardware | v1.1.4 | v1.1.0b2 |
 | VAN PI SHUNT | active | - | VAN PI OS & VAN PI HAT <br> VAN PI RELAYBOARD | - | - |
 | VAN PI RJ45 UART | active |  - | VAN PI OS | - | - |
-| VAN PI JST USB AUTOTERM  | actice | - | VAN PI OS | - | V1.1.0b2 |
-| VAN PI USB K-line  (Webasto)| actice | - | VAN PI OS | - | V1.1.0b2 |
+| VAN PI JST USB AUTOTERM  | actice | - | VAN PI OS | - | v1.1.0b2 |
+| VAN PI USB K-line  (Webasto)| actice | - | VAN PI OS | - | v1.1.0b2 |
 | VAN PI USB UART JST (Victron)| actice | - | VAN PI OS |
 | VAN PI Dimmy | active | PekawayMota / I2C / Standalone | VAN PI OS / MQTT | PekawayMota 1.1 |  -
 | DS18B20 | active | VAN PI OS  |  one wire bus - Rasbpberry |
 | resistance tank sensor | active | VAN PI OS | VAN PI HAT <br> VAN PI RELAYBOARD |  - | - |
 | capacitve tank sensor | active | VAN PI OS | VAN PI HAT <br> VAN PI RELAYBOARD |  - | - |
 | ESP32-c3 LIN BUS | in development | VAN PI LIN32 | VAN PI OS / MQTT |  - | - |
-| VAN PI ESP32-c3 Shunt | in development | VAN PI SHUNT32  | VAN PI OS / MQTT | VANPI SHUNT32 1.0 
+| VAN PI ESP32-c3 Shunt | in development | VAN PI SHUNT32  | VAN PI OS / MQTT | VANPI SHUNT32 1.0
 
 ## compatible PEKAWAY hardware
 - Pekaway Touchdisplay
@@ -208,23 +208,27 @@ If you don't want to use the system as a headless system you can use our install
 
 ## Node-RED
 
+Node-RED is used as the backend, doing all the calculations and connections. It also serves the frontend dashboard on port 1880. Check the [Wiki](https://github.com/Pekaway/VAN_PI/wiki/webinterface) to get an overview on how the system works.
+
 ## Python
 
-## Communictation
+Using some python scripts we can evaluate data coming from the shunt and different sensors. We decided to use Python instead of Node-RED itself to make use of another CPU core, since Node-RED, being a NodeJS application, only uses a single thread.
+Get more information about the Python scrips [here](https://github.com/Pekaway/VAN_PI/wiki/shunt). The scripts are included in the "home_pi_pekaway_files.zip" in the [VanPi-OS folder](https://github.com/Pekaway/VAN_PI/tree/main/VanPi-OS) if you want to read through them.
 
-## Other
+## Communication
 
+VanPi OS offers a HTTP and a MQTT API, which can be used to read and write data. See [Communication](https://github.com/Pekaway/VAN_PI/wiki/communication). Please be advised to not change the API functions, because several other hardware/software parts we offer use the API too, such as the IoT Bridge. Feel free to add more endpoints though, in case you need to.
 
 # FLASHTOOLS
 
-Here you can flash your ESPs with our Hardware .
+Here you can flash your ESPs with our preconfigured software [pekawayMOTA](https://github.com/Pekaway/VAN_PI/wiki/pekawaymota) .
 
-[ONLINE FLASHER](https://flashesp.pekaway.de)
+[ONLINE FLASHER](https://flashesp.pekaway.de) - connect your ESP via USB to your computer and use Google Chrome to flash the device using the online flasher.
 
-Onboard Flasher
+Onboard Flasher - You'll find it in the webinterface of the VanPi OS, go to config > system > flashtool. It'll start a different set of flows which will allow you to flash your ESP device when it is connected directly to the Raspberry Pi.
 
 ## SD IMAGE flash
-We recommend to flash the images [Balena Etcher](https://www.balena.io/etcher/) or [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/)
+We recommend to flash the images with either [Balena Etcher](https://www.balena.io/etcher/) or [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/)
 
 
 # Support the Project

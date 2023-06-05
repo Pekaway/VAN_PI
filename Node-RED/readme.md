@@ -65,39 +65,104 @@ Unfortunately there are still problems with the serial connection.
 
 ## Heater Autoterm
 
+In this flow the protocol for Autoterm 4D and 2D is included. The control works via the HeaterControls flow and partly via special controls in the Autotermflow. The communication to the serial port is controlled by the Connections Flow. 
+
+
 ## Heater China Diesel 
+
+In this flow the protocol for the China parking heater is implemented. 
+
+We use an Arduino NANO with a halfduplex softserial to communicate on USB to the "ONE-WIRE" bus of the China heater. Unfortunately there are connection problems after startup. More information about this can be found in the hardware folder "adapter". 
 
 ## Heater Webasto
 
+In this flow the protocol for the Webasto W-bus <3.5 heater is implemented. 
+
+k bus baudrate 2400 8E1 - OBD K-bus cable supported devices:
+
+-   thermo top v (water heater)
+
+the system activate the heater and set the runtime do 255min (max runtime). The temperature and power is then adjusted by the heater itself. When the water Temperature reaches 90°C the heater will shutdown. So you have to get enough heat out of the circuit to prevent this. The heater has two modes full load 5KW and part load 3.2KW.
+
+You can use a normal USB K-BUS OBD Cable. 
+
 ## JBD/Generic BMS
+
+Evaluation of JBD BMS systems when wired. 
 
 ## Tempsensor DS18B20
 
+Reading the temperature sensors via Python script and setting the global variables. 
+
+We use a Python script because all DS18B20 nodes, Node-Red blocked for 2-3s and no further data was processed. 
+
+
+
 ## Pekaway Shunt + Waterlevel Python
+
+There is a Python script which takes over the evaluation of the ADS1115 and provides the data via bottle web server for Node-Red. So there is no write access to the system and the data stays in the working memory. 
+
+The data is read by Node-Red, stored globally and the actual Python script is started. 
+We don´t use PM2. 
 
 ## HTTP API
 
+Provides the API endpoints for http access. 
+https://github.com/Pekaway/VAN_PI/wiki/communication
+
 ## MQTT API
+
+Provides the API endpoints for MQTT access. 
+https://github.com/Pekaway/VAN_PI/wiki/communication
 
 ## VE.Direct
 
+Evaluates the ASCII string of the Ve.Direct interface and stores the values device-specific globally. 
+
+
 ## WifiAP
+
+Controls the WIFI AP and the access of the Wifi connection to other networks. 
 
 ## Monit
 
+Provides the monitor tab to display the most important values over the last 24 hours. 
+
 ## BLE connections
+
+Communication to the BLE devices: 
+
+- Gok Senso4s
+- JBD BMS/Liontron etc. 
+
+The actual query is done in Python scripts via MAC address.
 
 ## Wifi TOUCHPANEL
 
+Provides the data for the NS PANEL with our interface. 
+
 ## Config 
+
+Provides the data for the NS PANEL with our interface. 
 
 ## Debug
 
+A few useful tools to find errors. 
+
 ## Update
 
-## new Verion 
+Here the update of the packages and flows is implemented. Also the backup of the user data is done here. 
+
+## new Version 
+
+A few tools we need when we release a new version. 
+
 
 ## ONBOARD FLASHER 
 
+Node-Red restarts and loads our onboard flasher. This can then be used to flash various devices such as the Esp32/Esp8266 for the dimmy. 
+
 ## LF BROS *obsolet* 
+
+Control of LF Bros heating via 433mhz. Is no longer active since we used "wiringPi" for this. This blocked us but the other UARTS from the RPI4 so we no longer have it as standard. 
 

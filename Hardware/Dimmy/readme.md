@@ -37,5 +37,9 @@ Control the 7 Channel via GPIO button/switches.
 	- sleep timer (long pressing while active)
 
 
+### Flashtool:
+
+[Pekaway Online Flasher](https://flashesp.pekaway.de)
+
 ## Known Issues
 - Pullup resistors (R21-R29) prevent boot, there are removed on the PCB in our shop

@@ -152,7 +152,7 @@ A few tools we need when we release a new version. Basically, these are used to 
 
 Node-RED restarts and loads a new set of nodes. This can then be used to flash various devices such as the ESP32/ESP8266 for the Dimmy PCB.
 
-# obsolete
+# obsolete:
 ## Heater LFBros
 
 Control of LFBros heating device using 433MHz. It is no longer active since we used "WiringPi" for this, which blocked the UART ports from the RPI4, therefore it is no longer available in the default VanPi OS image. The flow is deactivated but left in the VanPi OS image in case someone still wants to use it.

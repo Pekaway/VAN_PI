@@ -218,11 +218,11 @@ Node-RED is used as the backend, doing all the calculations and connections. It 
 ## Python
 
 Using some python scripts we can evaluate data coming from the shunt and different sensors. We decided to use Python instead of Node-RED itself to make use of another CPU core, since Node-RED, being a NodeJS application, only uses a single thread.
-Get more information about the Python scrips [here](https://github.com/Pekaway/VAN_PI/wiki/shunt). The scripts are included in the "home_pi_pekaway_files.zip" in the [VanPi-OS folder](https://github.com/Pekaway/VAN_PI/tree/main/VanPi-OS) if you want to read through them.
+Get more information about the Python scripts [here](https://github.com/Pekaway/VAN_PI/wiki/shunt). The scripts are included in the "home_pi_pekaway_files.zip" in the [VanPi-OS folder](https://github.com/Pekaway/VAN_PI/tree/main/VanPi-OS) if you want to read through them.
 
 ## Communication
 
-VanPi OS offers a HTTP and a MQTT API, which can be used to read and write data. See [Communication](https://github.com/Pekaway/VAN_PI/wiki/communication). Please be advised to not change the API functions, because several other hardware/software parts we offer use the API too, such as the IoT Bridge. Feel free to add more endpoints though, in case you need to.
+VanPi OS offers a HTTP and a MQTT API, which can be used to read and write data. See [Communication](https://github.com/Pekaway/VAN_PI/wiki/communication). Please be advised to not change the existing API functions in Node-RED, because several other hardware/software parts we offer use the API too, such as the IoT Bridge. Feel free to add more endpoints though, in case you need to.
 
 # FLASHTOOLS
 

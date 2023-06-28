@@ -155,4 +155,4 @@ Node-RED restarts and loads a new set of nodes. This can then be used to flash v
 # obsolete
 ## Heater LFBros
 
-Control of LF Bros heating via 433mhz. Is no longer active since we used "wiringPi" for this. This blocked the UART ports from the RPI4 so it is no longer available in the VanPi OS image. The flow is deactivated but left in the VanPi OS image in case someone still wants to use it.
+Control of LFBros heating device using 433MHz. It is no longer active since we used "WiringPi" for this, which blocked the UART ports from the RPI4, therefore it is no longer available in the default VanPi OS image. The flow is deactivated but left in the VanPi OS image in case someone still wants to use it.

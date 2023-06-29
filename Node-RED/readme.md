@@ -42,22 +42,21 @@ The MCP inputs are also controlled and recorded in this flow.
 
 ## Wifi Relay
 
-VanPi Supports Tasmota and Shelly Relays.
-This flow takes care of this.
+VanPi supports Tasmota and Shelly relays. This flow takes care of switching the relays and displaying names and statis on the dashboard.
 
 ## Dimmer Controller
 
-Our Dimmy PCB can be connected via Mqtt or directly via I2C.  This flow provides the control of the actual mosfets.
+The VanPi Dimmy PCB can be connected via Mqtt or directly via I2C.  This flow provides the control of the actual mosfets.
 
 ## Daly BMS
 
 Here the communication to the Daly BMS is controlled. All request frames are sent and the data is received and written to the global variables.
 
-## HeaterControls + MaxxFann
+## HeaterControls + MaxxFan
 
 The HeaterControls are placed as a layer above the actual heater and control the main functions. At the same time, the connection to other points (API, touch display, etc.) is established.
 
-The Maxxfan is also controlled and evaluated here. For this, there is a tutorial on how to control the MaxxFan with the help of an Arduino and a program from us.
+The MaxxFan is also controlled and evaluated here. For this, there is a tutorial on how to control the MaxxFan with the help of an Arduino and a program from us.
 Unfortunately there are still problems with the serial connection.
 
 ## Heater Autoterm
@@ -72,7 +71,7 @@ We use an Arduino NANO with a halfduplex softserial to communicate on USB to the
 
 ## Heater Webasto
 
-In this flow the protocol for the Webasto W-bus <3.5 heater is implemented.
+In this flow the protocol for the Webasto W-bus < 3.5 heater is implemented.
 
 k bus baudrate 2400 8E1 - OBD K-bus cable supported devices:
 

@@ -7,6 +7,10 @@
 # Simply download the script to your VanPi OS and		
 # execute it.											
 #														
+#
+#	This script still refers to the older gitlab repo
+#	and will be updated with the next update of VanPi OS
+#
 ########################################################
 
 # create logfile and make it writable

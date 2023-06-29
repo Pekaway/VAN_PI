@@ -6,6 +6,10 @@
 # on a clean and fresh 'Raspberry Pi OS (Buster)'!		
 # Simply download the script and execute it.			
 #														
+#
+#	This script still refers to the older gitlab repo
+#	and will be updated with the next update of VanPi OS
+#
 ########################################################
 
 # create logfile and make it writable

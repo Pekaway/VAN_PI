@@ -143,14 +143,14 @@ A few useful tools to find errors and get information about the system.
 
 Functions to update system packages and flows are implemented here. These will be called when a new release is available and an update is triggered. Also a backup of the user data can be done.
 
-## new Version
+## New Version
 
 A few tools we need when we release a new version. Basically, these are used to clean the system before taking a snapshot of the images, which we provide to download and flash onto the user's system.
 
 ## ONBOARD FLASHER
 
 Node-RED restarts and loads a new set of nodes. This can then be used to flash various devices such as the ESP32/ESP8266 for the Dimmy PCB.
-
+_____________________
 # obsolete:
 ## Heater LFBros
 

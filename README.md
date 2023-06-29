@@ -141,7 +141,7 @@ If you don't want to use the system as a headless system you can use our install
   
   - Web interface: <br>
 
-Using the Node-Red web interface, any device can be used as a display. Here it can be reached under http://"IP":1880/ui or alternatively under http://van.pi.
+Using the Node-RED web interface, any device can be used as a display. Here it can be reached under http://"IP":1880/ui or alternatively under http://van.pi.
   
   - HDMI: <br>
   VAN PI OS is based on a headless Debian/Raspbian image. You can install the software stack on Ubuntu/Debian based desktop versions with the install script and then use the normal webinterface as your display. Please be aware that manual adjustments may need to be done.
@@ -151,7 +151,7 @@ Using the Node-Red web interface, any device can be used as a display. Here it c
   With the RJ45 UART adapter we can connect a Nextion display to the Relayboard/HAT via an RJ45 ethernet cable. It provides 5V DC and 3.3V UART for communication. We do not have an official VAN PI Nextion image yet. You can find information about the protocol in the docs to build your own .tft file. 
   
   - Sonoff NS Wifi Panel: <br>
-   We support the NS Panel and have prepared a VAN PI tft file for it. The data is send with MQTT. Please check this installation quide **in development** 
+   We support the NS Panel and have prepared a VAN PI tft file for it. The data is send with MQTT. Please check this installation quide **in development**
 
 ## Other
  
@@ -213,7 +213,7 @@ Using the Node-Red web interface, any device can be used as a display. Here it c
 
 ## Node-RED
 
-Node-RED is used as the backend, doing all the calculations and connections. It also serves the frontend dashboard on port 1880. Check the [Wiki](https://github.com/Pekaway/VAN_PI/wiki/webinterface) to get an overview on how the system works.
+Node-RED is used as the backend, doing all the calculations and connections. It also serves the frontend dashboard on port 1880. Check the [Wiki](https://github.com/Pekaway/VAN_PI/wiki) to get an overview on how the system works.
 
 ## Python
 

@@ -63,8 +63,8 @@ For the developers is a Node-RED backend and various Python scripts for expansio
 
 - [QUICKSTART HAT](https://github.com/Pekaway/VAN_PI/blob/main/Hardware/HAT/ENG_VanPiHat_Quickstart.pdf)
 - [QUICKSTART Relayboard](https://github.com/Pekaway/VAN_PI/blob/main/Hardware/Relayboard/ENG_VanPiRelayboard_Quickstart.pdf)
-- [QUICKSTART Dimmy]
-- [QUICKSTART Shunt]
+- QUICKSTART Dimmy [Standalone](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-DIM-PCB_Standalone_Quickstart.pdf?v=1689619188) | [Wired](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-DIM-PCB_Wired_Quickstart.pdf?v=1689619212) | [WiFi](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-DIM-PCB_WiFi_Quickstart.pdf?v=1689619206)
+- [QUICKSTART Shunt Wired](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-SHU_Quickstart.pdf?v=1685610402)
 
 
 
@@ -94,7 +94,8 @@ If you don't want to use the system as a headless system you can use our install
     - DALY BMS UART MONIT (3pin)
     - JBD BMS UART PORT
   
-  - analog Shunt:<br>
+  - [analog Shunt](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-SHU_Quickstart.pdf?v=1685610402)
+:<br>
     - Measuring the voltage drop across a SHUNT using the ads1115 on the VAN PI relayboard and the VAN PI HAT. Voltage measurement is done using a voltage divider. A Python script reads the data and makes it accessible by providing a Bottle webserver (port 8080), Node-RED then checks the endpoint(s) to get the values. Data remains in the RAM and is written to the SD-Card every 5min.
   
   
@@ -109,11 +110,11 @@ If you don't want to use the system as a headless system you can use our install
   - capacitve sensor:<br>
   The Relayboard and the HAT have a jumper section to remove the voltage divider section to read voltage directly up to 3.3V to the ADS1115. 
   typical sensors:
-    - Votronic FL
-    - Votronic 15-50K, 12-24K
+    - [Votronic FL](https://vanpi.de/products/votronic-tanksensor-fl-5530)
+    - [Votronic 15-50K, 12-24K](https://vanpi.de/products/votronic-tankelektrode-15-50k-5545)
     - CBE sensors
     
-  - Flow sensors:<br>
+  - [Flow sensors](https://vanpi.de/blogs/tutorials/flowsensoren-in-van-pi-einbinden):<br>
   you can also connect flow sensors with gpio. Node-RED will then access the sensors directly).
   We have examples in our tutorial collection. Maybe there will be a fixed integration in the VAN PI OS soon. 
  
@@ -132,9 +133,9 @@ If you don't want to use the system as a headless system you can use our install
   
  - Autoterm 2D/4D (twin kit **in development**)
  - Webasto W-Bus <=3.5 - *tested with a Thermo Top V water heater*
- - Chinese Diesel Heater *blue wire* - Arduino NANO Serial Interface
+ - [Chinese Diesel Heater *blue wire* - Arduino NANO Serial Interface](https://vanpi.de/blogs/tutorials/china-diesel-heater-adapter-bauen)
  - Truma INET **in development**
- - LF BROS via 433mhz (needs to be activated in the backend since v1.1.0, WiringPI may need to be installed)
+ - [LF BROS via 433mhz (needs to be activated in the backend since v1.1.0, WiringPI may need to be installed)](https://vanpi.de/blogs/tutorials/lfbros-heizung-mit-433mhz-steuern)
  
    
   ## Displays
@@ -150,12 +151,12 @@ Using the Node-RED web interface, any device can be used as a display. Here it c
   
   With the RJ45 UART adapter we can connect a Nextion display to the Relayboard/HAT via an RJ45 ethernet cable. It provides 5V DC and 3.3V UART for communication. We do not have an official VAN PI Nextion image yet. You can find information about the protocol in the docs to build your own .tft file. 
   
-  - Sonoff NS Wifi Panel: <br>
+  - [Sonoff NS Wifi Panel:](https://vanpi.de/blogs/tutorials/sonoff-ns-panel-wifi-touchscreen) <br>
    We support the NS Panel and have prepared a VAN PI tft file for it. The data is send with MQTT. Please check this installation quide **in development**
 
 ## Other
  
- - MaxxFan
+ - [MaxxFan](https://vanpi.de/blogs/tutorials/maxxfan-ueber-infrarot-steuern)
 	 - wired
 	 - IR
 
@@ -164,25 +165,25 @@ Using the Node-RED web interface, any device can be used as a display. Here it c
 
 # VAN PI Hardware
 
-## Relayboard PCB
+## [Relayboard PCB](https://vanpi.de/products/van-pi-relayboard)
 
-## HAT PCB
+## [HAT PCB](https://vanpi.de/products/van-pi-hat)
 
-## SHUNT 100A/200A/300A
+## [SHUNT](https://vanpi.de/products/van-pi-messshunt) [100A](https://vanpi.de/products/van-pi-messshunt?variant=46638228209999)/[200A](https://vanpi.de/products/van-pi-messshunt?variant=46638228242767)/[300A](https://vanpi.de/products/van-pi-messshunt?variant=46638228275535)
 
-## RJ45 UART
+## [RJ45 UART](https://vanpi.de/products/van-pi-rj45-uart-adapter)
 
-## USB AUTOTERM
+## [USB AUTOTERM](https://vanpi.de/products/van-pi-usb-jst-fur-autoterm)
 
-## USB K-Line
+## [USB K-Line](https://vanpi.de/products/van-pi-usb-k-bus-fur-webasto)
 
-## USB JST
+## [USB JST](https://vanpi.de/products/van-pi-usb-jst-fur-autoterm)
 
-## Dimmy PCB
+## [Dimmy PCB](https://vanpi.de/products/van-pi-dimmy-pcb)
 
-## ESP32-C3 Shunt
+## ESP32-C3 Shunt **in development**
 
-## ESP32-C3 LIN BUS
+## ESP32-C3 LIN BUS **in development**
 
 
 ## Hardware/Project-Overview

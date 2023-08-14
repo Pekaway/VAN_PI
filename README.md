@@ -25,8 +25,8 @@
 * [Supported Devices](#Supported-Devices)
 * [VAN PI Hardware](#VAN-PI-Hardware)
 * [Software](#Software)
-* [Flashtools](#Flashtools)
-* [Support the Project](#Support-the-Project)
+* [Flashtools](#flashtools)
+* [Support the Project](#patreon)
 
 
 

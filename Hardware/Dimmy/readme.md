@@ -46,5 +46,8 @@ You can flash the firmware with the onboard flasher using the VanPi system or yo
 
 [Pekaway Online Flasher](https://flashesp.pekaway.de)
 
+### [Video (DE)](https://www.youtube.com/watch?v=uSyl_5VbsuM)
+
+
 ## Known Issues
 - Pullup resistors (R21-R29) prevent boot, there are removed on the PCB in our shop

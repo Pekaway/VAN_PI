@@ -61,3 +61,5 @@ Refer to this manual if you want to use the script: [VanPi init script](https://
 ### [zigbee2mqtt.service](https://github.com/Pekaway/VAN_PI/blob/main/VanPi-OS/zigbee2mqtt.service)
 
 A service file that will be used when zigbee2mqtt is activated. The service file makes sure that zigbee2mqtt will automatically start after a reboot.
+
+### [Video (DE)](https://www.youtube.com/watch?v=0tOiUHZ6s-4)

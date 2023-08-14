@@ -11,4 +11,6 @@
 ## Software
 VAN PI OS
 
-### [Quickstart](https://github.com/Pekaway/VAN_PI/blob/8dc9cc71363defc2e3733d534445c5b0b6a0733e/Quickstarts/Relayboard/ENG_VanPiRelayboard_Quickstart.pdf):
+### [Quickstart](https://github.com/Pekaway/VAN_PI/blob/8dc9cc71363defc2e3733d534445c5b0b6a0733e/Quickstarts/Relayboard/ENG_VanPiRelayboard_Quickstart.pdf)
+
+### [Video (DE)](https://www.youtube.com/watch?v=DMox0NL4BPU)

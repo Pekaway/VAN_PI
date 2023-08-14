@@ -55,6 +55,7 @@ For the developers is a Node-RED backend and various Python scripts for expansio
 # Releases
 
 ## VAN PI OS 1.1.0
+- [Download](https://links.vanpi.de/downloads.html)
 
  
 # Getting started

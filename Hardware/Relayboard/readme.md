@@ -1,4 +1,4 @@
-# RelayBoard ([Shop](https://vanpi.de/products/van-pi-relayboard))
+# Relayboard ([Shop](https://vanpi.de/products/van-pi-relayboard))
 
 - RJ45 Jack for Pekayway Touch Display
 - RJ11 Jack for VAN PI Shunt
@@ -11,4 +11,4 @@
 ## Software
 VAN PI OS
 
-### [Quickstart (DE)](https://github.com/Pekaway/VAN_PI/blob/8dc9cc71363defc2e3733d534445c5b0b6a0733e/Quickstarts/Relayboard/ENG_VanPiRelayboard_Quickstart.pdf):
+### [Quickstart](https://github.com/Pekaway/VAN_PI/blob/8dc9cc71363defc2e3733d534445c5b0b6a0733e/Quickstarts/Relayboard/ENG_VanPiRelayboard_Quickstart.pdf):

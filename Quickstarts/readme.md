@@ -10,7 +10,7 @@
   - Wired [DE](https://github.com/Pekaway/VAN_PI/blob/c08ec4c14e61379444c6d97ce9f800b606e08ece/Quickstarts/Hat/DE/DE_VanPiHat_Quickstart.pdf) | [ENG](https://github.com/Pekaway/VAN_PI/blob/c08ec4c14e61379444c6d97ce9f800b606e08ece/Quickstarts/Hat/ENG/ENG_VanPiHat_Quickstart.pdf)
 
 **Relayboard**
-  - Wired [DE](https://github.com/Pekaway/VAN_PI/blob/d0340abc620fa53b81c3e5e57f7bf7fbf0387196/Quickstarts/Relayboard/DE/DE_VanPiRelayboard_Quickstart.pdf) | [ENG](https://github.com/Pekaway/VAN_PI/blob/d0340abc620fa53b81c3e5e57f7bf7fbf0387196/Quickstarts/Relayboard/ENG/ENG_VanPiRelayboard_Quickstart.pdf)
+  - Wired [DE](https://github.com/Pekaway/VAN_PI/blob/main/Quickstarts/Relayboard/DE/VPI-RE8-PCB%20Quickstart%20v1.2.pdf) | [ENG](https://github.com/Pekaway/VAN_PI/blob/main/Quickstarts/Relayboard/ENG/VPI-RE8-PCB_ENG_Spec_v1.2.pdf)
 
 **Relayboard**
   - Wired [DE](https://github.com/Pekaway/VAN_PI/blob/cd6a44a198f2c2d475b5aee5e693d2fc13c8ea20/Quickstarts/Shunt/DE/DE_VanPiShunt_Quickstart.pdf) | [ENG](https://github.com/Pekaway/VAN_PI/blob/86edb4493b7c1f2404e3eced0fbfe24f2708a615/Quickstarts/Shunt/ENG/ENG_VanPiShunt_Quickstart.pdf)

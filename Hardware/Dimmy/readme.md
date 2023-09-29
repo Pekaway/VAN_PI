@@ -21,8 +21,18 @@ Connect the Dimmy PCB to the VAN PI Relayboard via JST PH 4pin cable and it will
 
 ### Standalone ([Quickstart](https://github.com/Pekaway/VAN_PI/blob/37d2b7901e29285f3f27b13b2280ac0d5027c247/Quickstarts/Dimmy/ENG_PekawayDIMMY_Standalone.pdf)):
 Control the 7 Channel via GPIO button/switches. 
-	- supports dimming by keeping pressed
-	- sleep timer (long pressing while active)
+- supports dimming by keeping pressed
+- sleep timer (long pressing while active)
+  
+- S1 –> all
+- S2 –> Out 1
+- S3 –> Out 2
+- S4 –> Out 3
+- S5 –> Out 4
+- S6 –> Out 5
+- S7 –> Out 6
+- S8 –> Out 7
+ 
 
  ### WiFi ([Quickstart](https://github.com/Pekaway/VAN_PI/blob/32edebe1b4127b89a3238451c4e29020c1214a3a/Quickstarts/Dimmy/ENG_PekawayDIMMY_WIFI.pdf)): 
 Connect the Dimmy via WiFi to the VAN PI. (Using VAN PI OS) 

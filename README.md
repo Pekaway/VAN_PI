@@ -115,7 +115,7 @@ If you don't want to use the system as a headless system you can use our install
     - [Votronic 15-50K, 12-24K](https://vanpi.de/products/votronic-tankelektrode-15-50k-5545)
     - CBE sensors
     
-  - [Flow sensors](https://vanpi.de/blogs/tutorials/flowsensoren-in-van-pi-einbinden):<br>
+  - [Flow sensors](https://pekaway.de/blogs/tutorials/flowsensoren-in-van-pi-einbinden-filter-durchfluss-messen):<br>
   you can also connect flow sensors with gpio. Node-RED will then access the sensors directly).
   We have examples in our tutorial collection. Maybe there will be a fixed integration in the VAN PI OS soon. 
  

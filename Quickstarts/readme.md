@@ -2,7 +2,7 @@
 
 **Dimmy**
   - Wired (I2C) [DE](https://github.com/Pekaway/VAN_PI/blob/main/Quickstarts/Dimmy/DE/VPI-DIM-PCB_GER_WIRED%20.pdf) | [ENG](https://github.com/Pekaway/VAN_PI/blob/main/Quickstarts/Dimmy/ENG/VPI-DIM-PCB_ENG_WIRED.pdf)
-  - Standalone [DE](https://github.com/Pekaway/VAN_PI/blob/c08ec4c14e61379444c6d97ce9f800b606e08ece/Quickstarts/Dimmy/DE/DE_PekawayDIMMY_Standalone.pdf) | [ENG](https://github.com/Pekaway/VAN_PI/blob/main/Quickstarts/Dimmy/ENG/VPI-DIM-PCB_ENG_Standalone.pdf)
+  - Standalone [DE](https://github.com/Pekaway/VAN_PI/blob/main/Quickstarts/Dimmy/DE/VPI-DIM-PCB_GER_Standalone.pdf) | [ENG](https://github.com/Pekaway/VAN_PI/blob/main/Quickstarts/Dimmy/ENG/VPI-DIM-PCB_ENG_Standalone.pdf)
   - WIFi [DE](https://github.com/Pekaway/VAN_PI/blob/main/Quickstarts/Dimmy/DE/VPI-DIM-PCB_GER_WIFI.pdf) | [ENG](https://github.com/Pekaway/VAN_PI/blob/37d2b7901e29285f3f27b13b2280ac0d5027c247/Quickstarts/Dimmy/ENG_PekawayDIMMY_Standalone.pdf)
 
 

@@ -16,10 +16,10 @@
 
 ## Software
 
-### Wired (I2C)([Quickstart](https://github.com/Pekaway/VAN_PI/blob/37d2b7901e29285f3f27b13b2280ac0d5027c247/Quickstarts/Dimmy/ENG_PekawayDIMMY_Wired.pdf)): 
+### Wired (I2C)([Quickstart](/Quickstarts/Dimmy/ENG/VPI-DIM-PCB_ENG_WIRED.pdf)): 
 Connect the Dimmy PCB to the VAN PI Relayboard via JST PH 4pin cable and it will work directly. (Using VAN PI OS) 
 
-### Standalone ([Quickstart](https://github.com/Pekaway/VAN_PI/blob/37d2b7901e29285f3f27b13b2280ac0d5027c247/Quickstarts/Dimmy/ENG_PekawayDIMMY_Standalone.pdf)):
+### Standalone ([Quickstart](/Quickstarts/Dimmy/ENG/VPI-DIM-PCB_ENG_Standalone.pdf)):
 Control the 7 Channel via GPIO button/switches. 
 - supports dimming by keeping pressed
 - sleep timer (long pressing while active)
@@ -34,7 +34,7 @@ Control the 7 Channel via GPIO button/switches.
 - S8 –> LED 7
  
 
- ### WiFi ([Quickstart](https://github.com/Pekaway/VAN_PI/blob/32edebe1b4127b89a3238451c4e29020c1214a3a/Quickstarts/Dimmy/ENG_PekawayDIMMY_WIFI.pdf)): 
+ ### WiFi ([Quickstart](/Quickstarts/Dimmy/ENG/ENG_PekawayDIMMY_WIFI.pdf)): 
 Connect the Dimmy via WiFi to the VAN PI. (Using VAN PI OS) 
 
 ### Pekaway Mota Wemos d1 (Esp8266/Esp32): 
@@ -47,7 +47,7 @@ Flash Pekaway Mota with our Onboard Flasher or with our Online Flasher.
 
 Firmware pekawayMOTA
 We compiled a custom version of  [Tasmota.io](https://tasmota.github.io/docs), to add the support for the PCA9685 PWM Controller.
-You can flash the firmware with the onboard flasher using the VanPi system or you can use our Webinstaller. 
+You can flash the firmware with the onboard flasher using the VanPi system or you can use our [Webinstaller](https://flashesp.pekaway.de). 
 
 
 
@@ -60,4 +60,4 @@ You can flash the firmware with the onboard flasher using the VanPi system or yo
 
 
 ## Known Issues
-- Pullup resistors (R21-R29) prevent boot, there are removed on the PCB in our shop
+- Pullup resistors (R21-R29) prevent boot, there are removed on the PCB in [our shop](https://vanpi.de/products/van-pi-dimmy-pcb)

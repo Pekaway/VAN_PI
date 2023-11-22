@@ -1,4 +1,50 @@
-# Update 1.1.1 (05 May 2023)
+# Update 1.1.2 (21 November 2023)
+- changed wifi firmware to firmware-brcm80211_20190114-1+rpt4_all.deb to increase stability when bluetooth is used
+- changed the delay that checks the second NR instance from 10s to 15s
+- added a function to switch between wifis and delete configured wifis (does not work in access point mode!)
+- added a function that shows the connected SSID when checking IP-address
+- added a function that checks if the configured wifi access point passphrase is between 8 and 63 characters
+- added http endpoint /reset_wifiAP/true to reset the access point
+- added http endpoint /network to show network info
+- added http endpoint /update_wifi_ap/:ssid/:wpa to update the wifi access point
+- added http endpoint /activate_wifi_ap/:input (:input has to be true or false) to de-/activate the wifi access point
+- added a sleep 1s function to the NonAPtoAP.sh script to compare old/new access point mode status (active/inactive, used in http endpoint /activate_wifi_ap)
+- added the possibility to use hidden networks when inserting wifi data manually
+- added a funtion that initialises the dropdown value for Main battdata
+- added a function to show the van name in the title bar
+- changed the charts in the Monitor tab for better visibility:
+    > chart titles always show current values accordingly
+    > temp charts now draw one point for every 15 incoming values (mean value)
+    > SoC chart now draws one point for every 5 incoming values (lowest value seen)
+    > Volt chart now draws one point for every 3 incoming values (mean value)
+    > Amp chart now draws one point for every 3 incoming values (mean value)
+    > CPU usage chart now draws one point for every 3 incoming values (highest value seen)
+    > TTGO field now shows the mean value for every 5 incoming values and minutes are rounded to the nearest quarter hour (15min)
+- removed dimmer 8 from the switch schedulers (Dimmy supports only 7 dimmer channels)
+- changed appendix for wifi SSID from "_VanPI" to "_pekaway.com"
+- rewrote the relay controller to only switch relays on actual change instead of constant updating
+- added a sleep timer in loops of python ads script to reduce CPU usage
+- added the option to show ttgo on the info tab (see Config > System)
+- switched groups RPI and BLE in System Config
+- added a function that shows overall CPU usage since boot in Monitor tab
+- fixed the tempsensor function not showing doubledigit numbers when temperature is below zero
+- fixed the default baudrate not being 115200 for MaxxFan UART
+- added a function to use a variable baudrate on USB4 (will reset on reboot)
+- fixed the function that hides Dimmers & W-Relays on first boot
+- added a function to controll dimmers via the MCP inputs
+- added offsets to all 4 temp and 2 dimmytemp sensors, so that displayed temps can be adjusted individually
+- added a function thats asks to turn everything off before shutting down (relays, w-relays & dimmers)
+- added a function to control a boiler with a relay and DS18B20 tempsensor
+- changed all groups in the frontend to now be collapsible
+- changed the update functions to use https://github.com/Pekaway/VAN_PI as server instead of git.pekaway.de
+- added a function that shows the state of the update process
+- added new HTTP and MQTT endpoints to set autoterm specific heatingpower and ventilation
+- deactivated automatic search for BMS (too many errors)
+- added support for SuperVolt & FlyBat Batteries (BLE)
+- fixed BLE scan function, was sometimes showing results as buffer instead of string
+- added .bin files to be flashed to ESP devices for dimmy (now supports ESP8266 & ESP32, Dimmy for VANPI & Standalone)
+
+# Update 1.1.1 (12 May 2023)
 - fixed mcp inputs not being displayed correctly
 - fixed water level 1 error which kept it from taking other values than 0
 - fixed error which prevented "main battdata" to be initialised on boot

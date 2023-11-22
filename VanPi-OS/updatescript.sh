@@ -58,7 +58,7 @@ echo -e "logfile will be at ${LOG_FILE}"
 
 if [[ $currentVersion1 -lt $newVersion1 ]]; then
   echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
-  
+
 elif [[ $currentVersion1 -eq $newVersion1 ]] && [[ $currentVersion2 -lt $newVersion2 ]]; then
   echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
   needUpdate='true'
@@ -75,7 +75,7 @@ fi
 
 
 # get confirmation to continue on manual update
-if [[ "$1" == "node-red-auto-update" ]] || [["$needUpdate" == 'true' ]]; then
+if [[ "$1" == "node-red-auto-update" ]] || [[ "$needUpdate" == 'true' ]]; then
 	echo -e "not asking for confirmation, proceeding automatically."
 else
 	while true; do

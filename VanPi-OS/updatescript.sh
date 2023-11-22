@@ -120,7 +120,7 @@ wget ${ServerFiles}NSPanel/VanPI_NSPANEL.tft
 wget ${Server}NSPanel/autoexec.be
 
 # get new files here
-wget ${ServerFiles}/newFilesForUpdate/supervolt_flybat.py
+wget ${Server}newFilesForUpdate/supervolt_flybat.py
 wget ${ServerFiles}Touchdisplay/PekawayTouch.tft
 
 # move TouchDisplay .tft file to /boot to be able to use SD-card to update Touchdisplay
@@ -129,7 +129,6 @@ sudo mv PekawayTouch.tft /boot/PekawayTouch${TouchdisplayVersion}.tft
 
 # move new files here
 mv supervolt_flybat.py ~/pekaway/ble_py/supervolt_flybat.py
-
 
 echo "Step 3/${steps}: installing packages" | sudo tee ${Progress}
 # copy NSPanel .tft file to ~/pekaway/userdata/NSPanel to show up in NR-Dashboard

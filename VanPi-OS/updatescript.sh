@@ -105,7 +105,11 @@ rm -f package.json
 rm -f pip3list.txt
 rm -f VanPI_NSPANEL.tft
 rm -f autoexec.be
-sudo rm -f /boot/*.tft
+
+sudo rm -f /boot/*.tft # delete old .tft for touchdisplay if it exists
+
+#delete files to be replaced here (e.g. updates in scripts)
+#rm -f ~/pekaway/ble_py/supervolt_flybat.py
 
 # download new files packages.txt and package.json
 echo "downloading new files"
@@ -114,17 +118,23 @@ wget ${Server}package.json
 wget ${Server}pip3list.txt
 wget ${ServerFiles}NSPanel/VanPI_NSPANEL.tft
 wget ${Server}NSPanel/autoexec.be
+
+# get new files here
+wget ${ServerFiles}/newFilesForUpdate/supervolt_flybat.py
 wget ${ServerFiles}Touchdisplay/PekawayTouch.tft
+
+# move TouchDisplay .tft file to /boot to be able to use SD-card to update Touchdisplay
+sudo chown root:root PekawayTouch.tft # cannot preserve ownership in root directory
+sudo mv PekawayTouch.tft /boot/PekawayTouch${TouchdisplayVersion}.tft
+
+# move new files here
+mv supervolt_flybat.py ~/pekaway/ble_py/supervolt_flybat.py
 
 
 echo "Step 3/${steps}: installing packages" | sudo tee ${Progress}
 # copy NSPanel .tft file to ~/pekaway/userdata/NSPanel to show up in NR-Dashboard
 mkdir -p ~/pekaway/userdata/NSPanel
 cp VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL${NSPanelVersion}.tft
-
-# move TouchDisplay .tft file to /boot to be able to use SD-card to update Touchdisplay
-sudo chown root:root PekawayTouch.tft # cannot preserve ownership in root directory
-sudo mv PekawayTouch.tft /boot/PekawayTouch${TouchdisplayVersion}.tft
 
 # make a backup of the existing package.json and replace it with the new file
 cp ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json

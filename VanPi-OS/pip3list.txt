@@ -10,6 +10,7 @@ args
 asn1crypto
 bleak
 bleson
+bluepy
 bottle
 certifi
 chardet

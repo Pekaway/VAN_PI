@@ -124,9 +124,38 @@ wget ${Server}NSPanel/autoexec.be
 wget ${Server}newFilesForUpdate/supervolt_flybat.py
 wget ${ServerFiles}Touchdisplay/PekawayTouch.tft
 
+# create files for mcp inputs if the don't exist
+# add json into files if they don't exist
+for i in {1..6}
+do
+	touch ~/pekaway/mcpinput"$i"
+	touch ~/pekaway/mcpinput"$i"_type
+	relays=$(cat ~/pekaway/mcpinput"$i" |  jq 'has("relays")')
+	dimmers=$(cat ~/pekaway/mcpinput"$i" |  jq 'has("dimmers")')
+	type=$(cat ~/pekaway/mcpinput"$i"_type)
+	echo "Relays$i: $relays"
+	echo "Dimmers$i: $dimmers"
+	echo "Type$i: $type"
+	if [[ "$type" != "switch" && "$type" != "button" ]]; then
+		echo 'switch' > ~/pekaway/mcpinput"$i"_type
+	fi
+	if [ "$relays" == "true" ]
+	then
+		if [ "$dimmers" != "true" ]; then
+			jq ' . += [{ "dimmers":{"d1":false,"d2":false,"d3":false,"d4":false,"d5":false,"d6":false,"d7":false} }] '
+		fi
+	elif [ "$relays" != "true" ]; then
+		echo '{"relays":{"one":false,"two":false,"three":false,"four":false,"five":false,"six":false,"seven":false,"eight":false},"dimmers":{"d1":false,"d2":false,"d3":false,"d4":false,"d5":false,"d6":false,"d7":false}}' > ~/pekaway/mcpinput"$i"
+	fi
+done
+
+
+
+
 # move TouchDisplay .tft file to /boot to be able to use SD-card to update Touchdisplay
 sudo chown root:root PekawayTouch.tft # cannot preserve ownership in root directory
 sudo mv PekawayTouch.tft /boot/PekawayTouch${TouchdisplayVersion}.tft
+
 
 # move new files here
 mv supervolt_flybat.py ~/pekaway/ble_py/supervolt_flybat.py

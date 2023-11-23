@@ -29,7 +29,7 @@ Progress=/var/log/pekaway-update_progress.log
 sudo truncate -s 0 ${Progress}
 sudo chmod 0666 ${Progress}
 echo "PID="$$ | sudo tee ${Progress} # get the PID
-sleep 5
+sleep 7
 echo "Step 1/${steps}: comparing versions" | sudo tee ${Progress}
 
 # create logfile and make it writable
@@ -95,7 +95,7 @@ else
 		esac
 	done
 fi
-
+sleep 3
 echo  "Step 2/${steps}: getting new files" | sudo tee ${Progress}
 
 # remove packages.txt and package.json if they already exist
@@ -131,6 +131,7 @@ sudo mv PekawayTouch.tft /boot/PekawayTouch${TouchdisplayVersion}.tft
 # move new files here
 mv supervolt_flybat.py ~/pekaway/ble_py/supervolt_flybat.py
 
+sleep 3
 echo "Step 3/${steps}: installing packages" | sudo tee ${Progress}
 # copy NSPanel .tft file to ~/pekaway/userdata/NSPanel to show up in NR-Dashboard
 mkdir -p ~/pekaway/userdata/NSPanel
@@ -147,6 +148,7 @@ cd ~/.node-red
 
 # compare older package.json with new one and ask for merging
 echo "comparing original package.json with the new one:"
+sleep 3
 echo "Step 4/${steps}: checking package.json" | sudo tee ${Progress}
 
 extramodules=$(diff <(jq --sort-keys .dependencies ~/.node-red/package.json) <(jq --sort-keys .dependencies ~/pekaway/nrbackups/package-backup.json) | grep '>')
@@ -194,6 +196,7 @@ else
 fi
 
 #install npm modules from package.json
+sleep 3
 echo "Step 5/${steps}: executing npm install" | sudo tee ${Progress}
 echo "installing npm modules, please stand by..."
 npm install
@@ -201,6 +204,7 @@ echo "done"
 
 cd ~/pekaway
 # Install/update python modules locally (user pi) and globally (root)
+sleep 3
 echo "Step 6/${steps}: checking python modules" | sudo tee ${Progress}
 echo "installing python modules, please stand by..."
 sudo pip3 install -r ~/pekaway/pip3list.txt
@@ -209,6 +213,7 @@ pip3 install -r ~/pekaway/pip3list.txt
 pip3 install bottle
 echo "done"
 
+sleep 3
 echo "Step 7/${steps}: backing up flows" | sudo tee ${Progress}
 
 # remove downloaded files
@@ -227,12 +232,15 @@ echo ${Version} >| ~/pekaway/version
 echo "1" >| ~/pekaway/update
 
 # download new flows and replace the old file
+sleep 3
 echo "Step 8/${steps}: getting new flows" | sudo tee ${Progress}
 echo "replacing local flows.json file with new one from the server"
 curl ${Server}flows.json > ~/pekaway/pkwUpdate/flows_pekaway.json 
 cp ~/pekaway/pkwUpdate/flows_pekaway.json ~/.node-red/flows_pekaway.json
 echo "update script finished! You can find the logfile at ${LOG_FILE}."
 rm ~/pekaway/pkwUpdate/flows_pekaway.json
+sleep 3
 echo "Step 9/${steps}: restarting..." | sudo tee ${Progress}
-sudo rm ${Progress}
+sleep 5
+sudo truncate -s 0 ${Progress}
 sudo systemctl restart nodered.service

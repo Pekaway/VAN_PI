@@ -207,6 +207,7 @@ cd ~/pekaway
 sleep 3
 echo "Step 6/${steps}: checking python modules" | sudo tee ${Progress}
 echo "installing python modules, please stand by..."
+sudo -H pip3 install --upgrade pip 
 sudo pip3 install -r ~/pekaway/pip3list.txt
 sudo pip3 install bottle
 pip3 install -r ~/pekaway/pip3list.txt

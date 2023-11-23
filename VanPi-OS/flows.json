@@ -18631,6 +18631,7 @@
         "id": "b6448fe9cfccfb84",
         "type": "ui_text",
         "z": "013c27e6e1e7446d",
+        "d": true,
         "group": "53df28c11a99d1b9",
         "order": 22,
         "width": 0,
@@ -64855,35 +64856,6 @@
         ]
     },
     {
-        "id": "d28a83127db02fee",
-        "type": "inject",
-        "z": "40d4ba5c28e4a6be",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "python3 /home/pi/pekaway/ble_py/supervolt_flybat.py 84:28:D7:8F:01:4D",
-        "payloadType": "str",
-        "x": 890,
-        "y": 600,
-        "wires": [
-            [
-                "99cb871e61c7b3f6"
-            ]
-        ]
-    },
-    {
         "id": "99cb871e61c7b3f6",
         "type": "exec",
         "z": "40d4ba5c28e4a6be",
@@ -64903,35 +64875,6 @@
             ],
             [],
             []
-        ]
-    },
-    {
-        "id": "ee43e07dbd47bf77",
-        "type": "inject",
-        "z": "40d4ba5c28e4a6be",
-        "name": "kill",
-        "props": [
-            {
-                "p": "kill",
-                "v": "SIGTERM",
-                "vt": "str"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 890,
-        "y": 640,
-        "wires": [
-            [
-                "99cb871e61c7b3f6"
-            ]
         ]
     },
     {
@@ -66447,7 +66390,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 140,
-        "y": 1220,
+        "y": 1100,
         "wires": [
             [
                 "d04597ae6daf3391",
@@ -66468,7 +66411,7 @@
         "oldrc": false,
         "name": "create directory",
         "x": 340,
-        "y": 1220,
+        "y": 1100,
         "wires": [
             [
                 "797e540326abd362"
@@ -66490,7 +66433,7 @@
         "oldrc": false,
         "name": "check ip eth0",
         "x": 530,
-        "y": 1220,
+        "y": 1100,
         "wires": [
             [
                 "849dc861be50c7c2"
@@ -66511,7 +66454,7 @@
         "finalize": "",
         "libs": [],
         "x": 690,
-        "y": 1220,
+        "y": 1100,
         "wires": [
             [
                 "68a1f17a735987fa"
@@ -66534,7 +66477,7 @@
         "oldrc": false,
         "name": "check ip wlan0",
         "x": 840,
-        "y": 1280,
+        "y": 1160,
         "wires": [
             [
                 "157d155e55fd2ecc"
@@ -66555,7 +66498,7 @@
         "template": "<div>\n    <p>\n        <a target=\"_blank\"href=\"{{ip}}\" style=\"text-align:center; color:white\">Click here to upload!</a>\n    </p>    \n</div>",
         "output": "str",
         "x": 860,
-        "y": 1220,
+        "y": 1100,
         "wires": [
             [
                 "3c2143187cded753"
@@ -66574,7 +66517,7 @@
         "finalize": "",
         "libs": [],
         "x": 990,
-        "y": 1280,
+        "y": 1160,
         "wires": [
             [
                 "68a1f17a735987fa"
@@ -66600,7 +66543,7 @@
         "topic": "",
         "name": "error",
         "x": 1130,
-        "y": 1280,
+        "y": 1160,
         "wires": [
             []
         ]
@@ -66621,7 +66564,7 @@
         "topic": "",
         "name": "upload link",
         "x": 1010,
-        "y": 1220,
+        "y": 1100,
         "wires": [
             [
                 "02ef6346fc803c18"
@@ -66641,7 +66584,7 @@
         "oldrc": false,
         "name": "search tft files",
         "x": 200,
-        "y": 1360,
+        "y": 1240,
         "wires": [
             [
                 "28e10b10087afd5f"
@@ -66666,7 +66609,7 @@
         "stream": false,
         "addname": "",
         "x": 430,
-        "y": 1340,
+        "y": 1220,
         "wires": [
             [
                 "0b5a6930ed1a6eab"
@@ -66685,7 +66628,7 @@
         "finalize": "",
         "libs": [],
         "x": 590,
-        "y": 1340,
+        "y": 1220,
         "wires": [
             [
                 "49ec96dff9c03645"
@@ -66713,7 +66656,7 @@
         "reduceInitType": "num",
         "reduceFixup": "",
         "x": 750,
-        "y": 1340,
+        "y": 1220,
         "wires": [
             [
                 "78d5e071522ab232"
@@ -66746,7 +66689,7 @@
         "topicType": "msg",
         "className": "",
         "x": 1060,
-        "y": 1340,
+        "y": 1220,
         "wires": [
             [
                 "cd389af689595421"
@@ -66765,7 +66708,7 @@
         "finalize": "",
         "libs": [],
         "x": 900,
-        "y": 1340,
+        "y": 1220,
         "wires": [
             [
                 "e578b22b7c7d306f"
@@ -66790,7 +66733,7 @@
         "repair": false,
         "outputs": 1,
         "x": 750,
-        "y": 1380,
+        "y": 1260,
         "wires": [
             [
                 "78d5e071522ab232"
@@ -66809,7 +66752,7 @@
         "finalize": "",
         "libs": [],
         "x": 1190,
-        "y": 1340,
+        "y": 1220,
         "wires": [
             []
         ]
@@ -66821,7 +66764,7 @@
         "name": "upload tft NSPanel file",
         "info": "",
         "x": 140,
-        "y": 1180,
+        "y": 1060,
         "wires": []
     },
     {
@@ -66831,7 +66774,7 @@
         "name": "upload form for tft NSPanel file",
         "info": "",
         "x": 170,
-        "y": 1040,
+        "y": 920,
         "wires": []
     },
     {
@@ -66844,7 +66787,7 @@
         "upload": false,
         "swaggerDoc": "",
         "x": 120,
-        "y": 1080,
+        "y": 960,
         "wires": [
             [
                 "e3cad5921d09b0c2"
@@ -66863,7 +66806,7 @@
         "template": "<style>\n    \n    :root {\n      --color-green-primary: rgb(51, 204, 51);\n      --color-green-secondary: rgb(26, 101, 26);\n      --color-red-primary: rgb(255, 0, 0);\n      --color-red-secondary: rgba(153,0,0,1);\n      --color-gray-primary: rgba(20,20,20,1);\n      --color-gray-secondary: rgba(65,65,65,1);\n      --color-text-headline: rgb(62, 206, 250);\n      --color-text-headline-secondary: rgb(31, 103, 125);\n      --color-text-primary: rgb(230, 226, 209);\n      --color-widget-border: rgb(84, 78, 78);\n      --color-sidebar-primary: rgba(26, 26, 26, 1)\n    }\n    \n    body {\n        height: 100%;\n        background: linear-gradient(180deg, var(--color-gray-primary)8%, var(--color-gray-secondary) 60%, var(--color-text-headline-secondary));\n    }\n    \n    .uploadform {\n        position: absolute;\n        right: 50%;\n        bottom: 50%;\n        transform: translate(50%,50%);\n    }\n    .text {\n        color: var(--color-text-headline); \n    }\n    \n</style>\n\n<body>\n    <div class=\"uploadform\">\n        <h1 class=\"text\">Upload a file here:</h1>\n        \n        <form action=\"/uploadedtft\" method=\"POST\" enctype=\"multipart/form-data\">\n            <input type=\"file\" name=\"myFile\" />\n            <input type=\"submit\" value=\"Submit\">\n        </form>\n        \n        <h2 class=\"text\">Please make sure the filename does not contain any spaces!</h2>\n    </div>\n</body>",
         "output": "str",
         "x": 270,
-        "y": 1080,
+        "y": 960,
         "wires": [
             [
                 "ceac38b6975cf28f"
@@ -66876,7 +66819,7 @@
         "z": "c60a5166bd6dac41",
         "name": "",
         "x": 390,
-        "y": 1080,
+        "y": 960,
         "wires": []
     },
     {
@@ -66891,7 +66834,7 @@
         "template": "<style>\n    \n    :root {\n      --color-green-primary: rgb(51, 204, 51);\n      --color-green-secondary: rgb(26, 101, 26);\n      --color-red-primary: rgb(255, 0, 0);\n      --color-red-secondary: rgba(153,0,0,1);\n      --color-gray-primary: rgba(20,20,20,1);\n      --color-gray-secondary: rgba(65,65,65,1);\n      --color-text-headline: rgb(62, 206, 250);\n      --color-text-headline-secondary: rgb(31, 103, 125);\n      --color-text-primary: rgb(230, 226, 209);\n      --color-widget-border: rgb(84, 78, 78);\n      --color-sidebar-primary: rgba(26, 26, 26, 1)\n    }\n    \n    body {\n        height: 100%;\n        background: linear-gradient(180deg, var(--color-gray-primary)8%, var(--color-gray-secondary) 60%, var(--color-text-headline-secondary));\n    }\n    \n    .textform {\n        position: absolute;\n        right: 50%;\n        bottom: 50%;\n        transform: translate(50%,50%);\n        color: var(--color-text-headline);\n        text-align: center;\n    }\n    \n</style>\n\n<body>\n    <div class=\"textform\">\n        <p></p>File {{name}} uploaded to {{filename}}!</p>\n        <br>\n        <p>You can now close this window.</p>\n    </div>\n</body>",
         "output": "str",
         "x": 450,
-        "y": 1120,
+        "y": 1000,
         "wires": [
             [
                 "0929f591f25eed1f"
@@ -66906,7 +66849,7 @@
         "statusCode": "",
         "headers": {},
         "x": 570,
-        "y": 1120,
+        "y": 1000,
         "wires": []
     },
     {
@@ -66915,12 +66858,13 @@
         "z": "c60a5166bd6dac41",
         "name": "save tft file to folder ",
         "filename": "filename",
+        "filenameType": "str",
         "appendNewline": true,
-        "createDir": false,
+        "createDir": true,
         "overwriteFile": "true",
         "encoding": "none",
-        "x": 490,
-        "y": 1160,
+        "x": 500,
+        "y": 1040,
         "wires": [
             []
         ]
@@ -66937,7 +66881,7 @@
         "finalize": "",
         "libs": [],
         "x": 310,
-        "y": 1140,
+        "y": 1020,
         "wires": [
             [
                 "8c03406073e738b1"
@@ -66957,7 +66901,7 @@
         "upload": true,
         "swaggerDoc": "",
         "x": 130,
-        "y": 1140,
+        "y": 1020,
         "wires": [
             [
                 "eca2f43df9f7aa25"
@@ -67005,7 +66949,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 120,
-        "y": 1700,
+        "y": 1580,
         "wires": [
             [
                 "4f4a30fa91c892bb"
@@ -67028,7 +66972,7 @@
         "topic": "",
         "name": "are you sure?",
         "x": 560,
-        "y": 1720,
+        "y": 1600,
         "wires": [
             [
                 "614df80949c0d63b"
@@ -67047,7 +66991,7 @@
         "finalize": "",
         "libs": [],
         "x": 350,
-        "y": 1700,
+        "y": 1580,
         "wires": [
             [
                 "83e8f30a3cb88607"
@@ -67073,7 +67017,7 @@
         "topic": "",
         "name": "no file selected",
         "x": 560,
-        "y": 1680,
+        "y": 1560,
         "wires": [
             []
         ]
@@ -67099,7 +67043,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 130,
-        "y": 1600,
+        "y": 1480,
         "wires": [
             [
                 "6db823e5b54d0e89"
@@ -67118,7 +67062,7 @@
         "finalize": "",
         "libs": [],
         "x": 790,
-        "y": 1600,
+        "y": 1480,
         "wires": [
             [
                 "f1b8d8fb46ac8e42"
@@ -67137,7 +67081,7 @@
         "finalize": "",
         "libs": [],
         "x": 350,
-        "y": 1600,
+        "y": 1480,
         "wires": [
             [
                 "47a2f53e14ef3ff3"
@@ -67160,7 +67104,7 @@
         "topic": "",
         "name": "are you sure?",
         "x": 560,
-        "y": 1600,
+        "y": 1480,
         "wires": [
             [
                 "46caa82ae3fd5d72"
@@ -67179,7 +67123,7 @@
         "finalize": "",
         "libs": [],
         "x": 1150,
-        "y": 1600,
+        "y": 1480,
         "wires": [
             [
                 "4080c3fd73e7a539"
@@ -67202,7 +67146,7 @@
         "topic": "",
         "name": "install driver",
         "x": 990,
-        "y": 1600,
+        "y": 1480,
         "wires": [
             [
                 "33999b39889b1ace"
@@ -67216,7 +67160,7 @@
         "name": "install berry driver",
         "info": "",
         "x": 120,
-        "y": 1560,
+        "y": 1440,
         "wires": []
     },
     {
@@ -67234,7 +67178,7 @@
         "expiry": "",
         "broker": "0ddb07c65cbb68bc",
         "x": 1450,
-        "y": 1600,
+        "y": 1480,
         "wires": []
     },
     {
@@ -67249,7 +67193,7 @@
         "finalize": "",
         "libs": [],
         "x": 790,
-        "y": 1700,
+        "y": 1580,
         "wires": [
             [
                 "56354413d78a91e4"
@@ -67269,7 +67213,7 @@
         "oldrc": false,
         "name": "",
         "x": 970,
-        "y": 1700,
+        "y": 1580,
         "wires": [
             [],
             [],
@@ -67294,7 +67238,7 @@
         "topic": "",
         "name": "file set",
         "x": 1310,
-        "y": 1700,
+        "y": 1580,
         "wires": [
             []
         ]
@@ -67311,7 +67255,7 @@
         "finalize": "",
         "libs": [],
         "x": 1140,
-        "y": 1700,
+        "y": 1580,
         "wires": [
             [
                 "a4fea50ab6c8baf9",
@@ -67331,7 +67275,7 @@
         "finalize": "",
         "libs": [],
         "x": 1310,
-        "y": 1660,
+        "y": 1540,
         "wires": [
             [
                 "4080c3fd73e7a539"
@@ -67345,7 +67289,7 @@
         "name": "flash .tft file to NSPanel",
         "info": "",
         "x": 140,
-        "y": 1660,
+        "y": 1540,
         "wires": []
     },
     {
@@ -67369,7 +67313,7 @@
         "topic": "topic",
         "topicType": "msg",
         "x": 150,
-        "y": 1480,
+        "y": 1360,
         "wires": [
             [
                 "de055359dea0c1a0"
@@ -67388,7 +67332,7 @@
         "finalize": "",
         "libs": [],
         "x": 370,
-        "y": 1480,
+        "y": 1360,
         "wires": [
             [
                 "267fef3496c22636"
@@ -67411,7 +67355,7 @@
         "topic": "",
         "name": "are you sure?",
         "x": 560,
-        "y": 1480,
+        "y": 1360,
         "wires": [
             [
                 "6caa8a2226b006e6"
@@ -67423,14 +67367,14 @@
         "type": "function",
         "z": "c60a5166bd6dac41",
         "name": "check Ok/Cancel",
-        "func": "if (msg.payload == \"Cancel\"){\n    return null   \n}\nelse if (msg.payload == \"Go!\") {\n    msg.payload = \"rm ~/pekaway/VanPI_NSPANEL.tft & rm ~/pekaway/autoexec.be & cd ~/pekaway && wget -o /dev/null -N https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-OS/NSPanel/autoexec.be & mkdir -p ~/pekaway/userdata/NSPanel && cd ~/pekaway/userdata/NSPanel && wget -o /dev/null -N https://github.com/Pekaway/VAN_PI/raw/main/VanPi-OS/NSPanel/VanPI_NSPANEL.tft\"\n    return msg;\n}",
+        "func": "if (msg.payload == \"Cancel\"){\n    return null   \n}\nelse if (msg.payload == \"Go!\") {\n    msg.payload = \"rm -f ~/pekaway/VanPI_NSPANEL.tft & rm ~/pekaway/autoexec.be & cd ~/pekaway && wget -o /dev/null -N https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-OS/NSPanel/autoexec.be & mkdir -p ~/pekaway/userdata/NSPanel && cd ~/pekaway/userdata/NSPanel && wget -o /dev/null -N https://github.com/Pekaway/VAN_PI/raw/main/VanPi-OS/NSPanel/VanPI_NSPANEL.tft\"\n    return msg;\n}",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
         "x": 790,
-        "y": 1480,
+        "y": 1360,
         "wires": [
             [
                 "72c97f10c004d332"
@@ -67450,7 +67394,7 @@
         "oldrc": false,
         "name": "",
         "x": 970,
-        "y": 1480,
+        "y": 1360,
         "wires": [
             [
                 "02ef6346fc803c18"
@@ -67468,7 +67412,7 @@
             "ad8661b48ea2508f"
         ],
         "x": 165,
-        "y": 1260,
+        "y": 1140,
         "wires": [
             [
                 "02ef6346fc803c18"
@@ -89170,7 +89114,7 @@
         "winHide": false,
         "oldrc": false,
         "name": "",
-        "x": 470,
+        "x": 480,
         "y": 1540,
         "wires": [
             [
@@ -91766,9 +91710,7 @@
         "x": 1170,
         "y": 240,
         "wires": [
-            [
-                "9278dbb52bcd0c99"
-            ],
+            [],
             [],
             []
         ]
@@ -91862,70 +91804,6 @@
         "x": 1840,
         "y": 380,
         "wires": []
-    },
-    {
-        "id": "ee4e56a146a92df7",
-        "type": "function",
-        "z": "d1a4ceb114f5619d",
-        "name": "clean /var/log/ folder",
-        "func": "msg.payload = \"sudo rm /var/log/*\"\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1460,
-        "y": 240,
-        "wires": [
-            [
-                "13a587f7e3d6cb2b"
-            ]
-        ]
-    },
-    {
-        "id": "9278dbb52bcd0c99",
-        "type": "delay",
-        "z": "d1a4ceb114f5619d",
-        "name": "1s",
-        "pauseType": "delay",
-        "timeout": "1",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 1290,
-        "y": 240,
-        "wires": [
-            [
-                "ee4e56a146a92df7"
-            ]
-        ]
-    },
-    {
-        "id": "13a587f7e3d6cb2b",
-        "type": "exec",
-        "z": "d1a4ceb114f5619d",
-        "command": "",
-        "addpay": "payload",
-        "append": "",
-        "useSpawn": "false",
-        "timer": "",
-        "winHide": false,
-        "oldrc": false,
-        "name": "",
-        "x": 1650,
-        "y": 240,
-        "wires": [
-            [],
-            [],
-            []
-        ]
     },
     {
         "id": "14967efb2a1d6f5c",
@@ -92174,7 +92052,7 @@
         "winHide": false,
         "oldrc": false,
         "name": "prepare mosquitto logs",
-        "x": 1060,
+        "x": 1050,
         "y": 1540,
         "wires": [
             [],

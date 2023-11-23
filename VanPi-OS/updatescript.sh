@@ -27,9 +27,9 @@ VersionToCheck='v1.1.1' # Version that has relevant changes in update script
 # create file for progressbar in NR dashboard
 Progress=/var/log/pekaway-update_progress.log
 sudo truncate -s 0 ${Progress}
-sleep 5
 sudo chmod 0666 ${Progress}
 echo "PID="$$ | sudo tee ${Progress} # get the PID
+sleep 5
 echo "Step 1/${steps}: comparing versions" | sudo tee ${Progress}
 
 # create logfile and make it writable

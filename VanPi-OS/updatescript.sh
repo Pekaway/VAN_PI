@@ -130,8 +130,13 @@ for i in {1..6}
 do
 	touch ~/pekaway/mcpinput"$i"
 	touch ~/pekaway/mcpinput"$i"_type
+<<<<<<< HEAD
 	relays=$(cat < ~/pekaway/mcpinput"$i" |  jq 'has("relays")')
 	dimmers=$(cat < ~/pekaway/mcpinput"$i" |  jq 'has("dimmers")')
+=======
+	relays=$(cmd < ~/pekaway/mcpinput"$i" |  jq 'has("relays")')
+	dimmers=$(cmd < ~/pekaway/mcpinput"$i" |  jq 'has("dimmers")')
+>>>>>>> 7ee63669a1a8548dd9128bef5c6ad26038814769
 	type=$(cat ~/pekaway/mcpinput"$i"_type)
 	echo "Relays$i: $relays"
 	echo "Dimmers$i: $dimmers"
@@ -139,12 +144,13 @@ do
 	if [[ "$type" != "switch" && "$type" != "button" ]]; then
 		echo 'switch' > ~/pekaway/mcpinput"$i"_type
 	fi
-	if [ "$relays" == "true" ]
+	if [[ "$relays" == "true" ]] 
 	then
-		if [ "$dimmers" != "true" ]; then
-			jq ' . += [{ "dimmers":{"d1":false,"d2":false,"d3":false,"d4":false,"d5":false,"d6":false,"d7":false} }] '
+		if [[ "$dimmers" != "true" ]]; then	
+		input=&(jq ' . += {"dimmers":{"d1":false,"d2":false,"d3":false,"d4":false,"d5":false,"d6":false,"d7":false}}' ~/pekaway/mcpinput"$i")
+		echo "$input" > ~/pekaway/mcpinput"$i"
 		fi
-	elif [ "$relays" != "true" ]; then
+	elif [[ "$relays" != "true" ]]; then
 		echo '{"relays":{"one":false,"two":false,"three":false,"four":false,"five":false,"six":false,"seven":false,"eight":false},"dimmers":{"d1":false,"d2":false,"d3":false,"d4":false,"d5":false,"d6":false,"d7":false}}' > ~/pekaway/mcpinput"$i"
 	fi
 done

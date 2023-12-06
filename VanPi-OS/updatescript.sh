@@ -142,7 +142,7 @@ do
 	if [[ "$relays" == "true" ]] 
 	then
 		if [[ "$dimmers" != "true" ]]; then	
-		input=&(jq ' . += {"dimmers":{"d1":false,"d2":false,"d3":false,"d4":false,"d5":false,"d6":false,"d7":false}}' ~/pekaway/mcpinput"$i")
+		input=$(jq ' . += {"dimmers":{"d1":false,"d2":false,"d3":false,"d4":false,"d5":false,"d6":false,"d7":false}}' ~/pekaway/mcpinput"$i")
 		echo "$input" > ~/pekaway/mcpinput"$i"
 		fi
 	elif [[ "$relays" != "true" ]]; then

@@ -130,8 +130,8 @@ for i in {1..6}
 do
 	touch ~/pekaway/mcpinput"$i"
 	touch ~/pekaway/mcpinput"$i"_type
-	relays=$(cat ~/pekaway/mcpinput"$i" |  jq 'has("relays")')
-	dimmers=$(cat ~/pekaway/mcpinput"$i" |  jq 'has("dimmers")')
+	relays=$(cat < ~/pekaway/mcpinput"$i" |  jq 'has("relays")')
+	dimmers=$(cat < ~/pekaway/mcpinput"$i" |  jq 'has("dimmers")')
 	type=$(cat ~/pekaway/mcpinput"$i"_type)
 	echo "Relays$i: $relays"
 	echo "Dimmers$i: $dimmers"

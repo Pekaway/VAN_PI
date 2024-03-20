@@ -1,6 +1,9 @@
 
+
+
+
 <p align="center">
-    <img src="https://raw.githubusercontent.com/Pekaway/VAN_PI/main/assets/logo/vanpi_logo.png" alt="Logo" >
+    <img src="https://raw.githubusercontent.com/Pekaway/VAN_PI/main/assets/logo/vanpi_logo.png" alt="Logo" width="250" >
 
   <p align="center">
     ALL IN ONE RASPBERRY BASED MOBILE SMART HOME ENVIRONMENT
@@ -54,35 +57,78 @@ For the developers is a Node-RED backend and various Python scripts for expansio
 
 # Releases
 
-## VAN PI OS 1.1.0
+## VAN PI OS 2.0.0
 - [Download](https://links.vanpi.de/downloads.html)
-
- 
-# Getting started
-
-## Quickstart
-
-- [QUICKSTART HAT](https://github.com/Pekaway/VAN_PI/blob/main/Hardware/HAT/ENG_VanPiHat_Quickstart.pdf)
-- [QUICKSTART Relayboard](https://github.com/Pekaway/VAN_PI/blob/main/Hardware/Relayboard/ENG_VanPiRelayboard_Quickstart.pdf)
-- QUICKSTART Dimmy [Standalone](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-DIM-PCB_Standalone_Quickstart.pdf?v=1689619188) | [Wired](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-DIM-PCB_Wired_Quickstart.pdf?v=1689619212) | [WiFi](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-DIM-PCB_WiFi_Quickstart.pdf?v=1689619206)
-- [QUICKSTART Shunt Wired](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-SHU_Quickstart.pdf?v=1685610402)
-
-
-
-
-
-
-## Manual
-
-- [VAN PI SYSTEM MANUAL](https://github.com/Pekaway/VAN_PI/blob/main/Manual/Manuel%20VANPI%201.2.pdf)
-
 
 ## Installation Script
 
 If you don't want to use the system as a headless system you can use our installation script.
 
 
+# Pekaway Hardware for VAN PI 
+
+## VAN PI CORE
+
+Core of the system that brings all devices together. 
+
+[Pekaway/VAN-PI-CORE (github.com)](https://github.com/Pekaway/VAN-PI-CORE)
+## VAN PI DIMMY
+
+7 Channel PWM Dimmer Board 
+Works wired without an extra chip. 
+You can use it with an ESP32 (wemos) as a standalone Board and you can also use connect it via PekawayMOTA (Tasmota) per Wifi/MQTT to the VAN PI OS. 
+
+[Pekaway/DIMMY: dc PWM LED Controller (github.com)](https://github.com/Pekaway/DIMMY)
+## Pekaway Smart Shunt ESP32-C3
+
+ESP32-C3 INA2226 200A Shunt. 
+Works with the VAN PI OS via BLE but you can also use it standalone. 
+
+[Pekaway/ESP32-BLE-WIFI-SHUNT: ESP32-C3 Battery Monitor Shunt (github.com)](https://github.com/Pekaway/ESP32-BLE-WIFI-SHUNT)
+
+
+
+## Pekaway Touchscreen
+
+7" capactive Touchscreen. 
+Based on Nextion and the Nextion Studio. 
+Connect to the System VAN PI System via "RJ45 UART" 
+
+Advantages compared to an Andorid/IOS tablet. -> much lower standby power, fast wake-up time, easy integration, is permanently installed and can therefore not be used for other things and is therefore always in the same place. 
+
+[Pekaway Touchdisplay](https://pekaway.de/collections/alle-produkte/products/pekaway-touchdisplay)
+
+
+
+
+## Pekaway IOT Bridge
+
+Connect the system via Wifi to the Mobilnetwork. Comes with build in SIM.
+The Bridge uses the local http api. So also here if you want your own software stack. You only have to provide the VAN PI OS API to use the bridges to. 
+
+
+- 2G Version
+	- entry variant 
+	- fast enough to read the data from the system. 
+Good network coverage. Switching off 2G will still take a while (EU)
+
+- 4G Version
+	- uses the normal LTE 4G network. 
+LTE-M is still not available in many countries. 
+NB-IOT is not stable for our application due to the high latency. 
+	- GPS
+	- GPS ALARM possible 
+
+
+- 4G+  
+	- same functionality as the 4G version, but with battery backup. The system continues to run even if the main battery is switched off. 
+
+
+
+
+
 # Supported Devices
+
  ## Battery
   - Bluetooth BMS:<br>
     - JBD BMS SYSTEMS e.g. Liontron Batterys
@@ -96,12 +142,22 @@ If you don't want to use the system as a headless system you can use our install
     - JBD BMS UART PORT
   
   - [analog Shunt](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-SHU_Quickstart.pdf?v=1685610402)
-:<br>
+<br>
     - Measuring the voltage drop across a SHUNT using the ads1115 on the VAN PI relayboard and the VAN PI HAT. Voltage measurement is done using a voltage divider. A Python script reads the data and makes it accessible by providing a Bottle webserver (port 8080), Node-RED then checks the endpoint(s) to get the values. Data remains in the RAM and is written to the SD-Card every 5min.
   
   
-  - ESP32-C3 INA226 SHUNT: <br>
-    - standalone Esp32-c3 based WIFI Shunt. Measures the current, SOC, Battery Voltage. MQTT and BLE will be supported  **in development** [Check our Patreon](https://www.patreon.com/posts/wir-suchen-fur-91149815)
+- [Pekaway Smart Shunt ESP32-C3](https://github.com/Pekaway/ESP32-BLE-WIFI-SHUNT)
+
+
+  ## Solarcharger 
+
+  - Renogy:<br>
+    - [cyrils/renogy-bt: Python library to read Renogy compatible BT-1 or BT-2 bluetooth modules using Raspberry Pi. (github.com)](https://github.com/cyrils/renogy-bt) 
+    - not yet installed in VAN PI OS 
+
+- Pekaway MPPT S20 - via Python Bluetooth read out
+	- SHOP LINK
+
   
   
   ## Water
@@ -132,10 +188,11 @@ If you don't want to use the system as a headless system you can use our install
   
  ## Heater
   
- - Autoterm 2D/4D (twin kit **in development**)
+ -  Autoterm 2D/4D
+ -  Autoterm 2D/4D (twin kit **in development**)
  - Webasto W-Bus <=3.5 - *tested with a Thermo Top V water heater*
  - [Chinese Diesel Heater *blue wire* - Arduino NANO Serial Interface](https://vanpi.de/blogs/tutorials/china-diesel-heater-adapter-bauen)
- - Truma INET **in development**
+ - Truma via [danielfett/inetbox.py: A software implementation of something similar to a Truma iNet box (github.com)](https://github.com/danielfett/inetbox.py)
  - [LF BROS via 433mhz (needs to be activated in the backend since v1.1.0, WiringPI may need to be installed)](https://vanpi.de/blogs/tutorials/lfbros-heizung-mit-433mhz-steuern)
  
    
@@ -151,63 +208,37 @@ Using the Node-RED web interface, any device can be used as a display. Here it c
   - Nextion via UART:<br>
   
   With the RJ45 UART adapter we can connect a Nextion display to the Relayboard/HAT via an RJ45 ethernet cable. It provides 5V DC and 3.3V UART for communication. We do not have an official VAN PI Nextion image yet. You can find information about the protocol in the docs to build your own .tft file. 
+  Or just use our Pekaway Touchscreen 
+  [Pekaway Touchdisplay](https://pekaway.de/collections/alle-produkte/products/pekaway-touchdisplay)
   
   - [Sonoff NS Wifi Panel:](https://pekaway.de/blogs/tutorials/sonoff-ns-panel-wifi-touchscreen-v1-0) <br>
    We support the NS Panel and have prepared a VAN PI tft file for it. The data is send with MQTT. Please check this installation quide **in development**
+   
+  - [Pekaway APP](https://pekaway.de/blogs/tutorials/sonoff-ns-panel-wifi-touchscreen-v1-0) <br>
+Control the device via our App.  The App is using the http&MQTT API. So if you planing your own software stack. If you provide our API (build in Node-Red) The app will also work on your software. 
+
+
+ ## GPS
+  - GPS via RJ45UART <br>
+	  - You can connect a GPS module to the VAN PI Core using the RJ45 UART. All you need is a 3.3V module and a 12V -> 3.3V voltage converter. The module then sends the data to UART1 and is evaluated in Node-Red. Pay attention to the baud rate and check it in the connections Flow if necessary. 
+
+
+  - GPS via USB 
+  - GPS via Pekaway IOT Bridge 4G and 4G+ 
 
 ## Other
  
- - [MaxxFan](https://pekaway.de/blogs/tutorials/maxxfan-uber-infrarot-steuern)
-	 - wired
-	 - IR
+ - MaxxFan
+	 - wired -> 
+	 - IR -> [Pekaway/maxx-wifi-controller: Maxx Remote Wifi Controller (github.com)](https://github.com/Pekaway/maxx-wifi-controller)
 
-- GOK Senso4s
+- [Pekaway/I2C-GPIO-extension: I2C Extension for the VAN PI CORE (github.com)](https://github.com/Pekaway/I2C-GPIO-extension)
+
+
+- GOK Senso4s via Bluetooth read out
+
+- RUUVI TAG BLE Temp and Humidity 
  
-
-# VAN PI Hardware
-
-## [Relayboard PCB](https://vanpi.de/products/van-pi-relayboard)
-
-## [HAT PCB](https://vanpi.de/products/van-pi-hat)
-
-## [SHUNT](https://vanpi.de/products/van-pi-messshunt) [100A](https://vanpi.de/products/van-pi-messshunt?variant=46638228209999)/[200A](https://vanpi.de/products/van-pi-messshunt?variant=46638228242767)/[300A](https://vanpi.de/products/van-pi-messshunt?variant=46638228275535)
-
-## [RJ45 UART](https://vanpi.de/products/van-pi-rj45-uart-adapter)
-
-## [USB AUTOTERM](https://vanpi.de/products/van-pi-usb-jst-fur-autoterm)
-
-## [USB K-Line](https://vanpi.de/products/van-pi-usb-k-bus-fur-webasto)
-
-## [USB JST](https://vanpi.de/products/van-pi-usb-jst-fur-autoterm)
-
-## [Dimmy PCB](https://vanpi.de/products/van-pi-dimmy-pcb)
-
-## ESP32-C3 Shunt **in development**
-
-## ESP32-C3 LIN BUS **in development**
-
-
-## Hardware/Project-Overview
-
-| Hardware | Satus | Software | compatible devices | current stable version | current beta |
-|----------|----------|----------|----------|----------| ----------|
-| VAN PI RELAY BOARD | actice | VAN PI OS | all VAN PI Hardware  | v1.1.1 | v1.1.0b2 |
-| VAN PI HAT | active |- | all VAN PI Hardware | v1.1.1 | v1.1.0b2 |
-| VAN PI SHUNT | active | - | VAN PI OS & VAN PI HAT <br> VAN PI RELAYBOARD | - | - |
-| VAN PI RJ45 UART | active |  - | VAN PI OS | - | - |
-| VAN PI JST USB AUTOTERM  | actice | - | VAN PI OS | - | v1.1.0b2 |
-| VAN PI USB K-line  (Webasto)| actice | - | VAN PI OS | - | v1.1.0b2 |
-| VAN PI USB UART JST (Victron)| actice | - | VAN PI OS |
-| VAN PI Dimmy | active | PekawayMota / I2C / Standalone | VAN PI OS / MQTT | PekawayMota 1.1 |  -
-| DS18B20 | active | VAN PI OS  |  one wire bus - Rasbpberry |
-| resistance tank sensor | active | VAN PI OS | VAN PI HAT <br> VAN PI RELAYBOARD |  - | - |
-| capacitve tank sensor | active | VAN PI OS | VAN PI HAT <br> VAN PI RELAYBOARD |  - | - |
-| ESP32-c3 LIN BUS | in development | VAN PI LIN32 | VAN PI OS / MQTT |  - | - |
-| VAN PI ESP32-c3 Shunt | in development | VAN PI SHUNT32  | VAN PI OS / MQTT | VANPI SHUNT32 1.0
-
-## compatible PEKAWAY hardware
-- Pekaway Touchdisplay
-- Pekaway IOT Bridge
 
 
 
@@ -238,7 +269,24 @@ Onboard Flasher - You'll find it in the webinterface of the VanPi OS, go to conf
 We recommend to flash the images with either [Balena Etcher](https://www.balena.io/etcher/) or [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/)
 
 
+
+# OTHER SOFTWARE STACKS
+
+Software stack based on VAN PI OS Node-red "Core" functions, supports also the RPI5 and a lot of cool other Features. 
+
+- [nomadPi](https://nomadpi.com/)
+
+
+
+MQTT Connector for HomeAssistant etc. 
+- [schroeder-robert/vantelligence_connector: A MQTT connector for devices in your camper! (github.com)](https://github.com/schroeder-robert/vantelligence_connector)
+
+
+
+
 # Support the Project
+
+This project lives from its community. We look forward to your support. Only with your support can the project continue to grow and offer you exciting hardware and software. 
 
 ## Patreon
 
@@ -249,4 +297,4 @@ If you like our project feel free to support it:
 [VAN PI by Pekaway | All In One Campercontrol System | Patreon](https://www.patreon.com/vanpibypekaway)
 
 ## Links
-<a target="_blank" href="https://forum.pekaway.de/">Forum</a> --- <a target="_blank" href="https://instagram.com/peka.way">Instagram</a> --- <a target="_blank" href="https://vanpi.de">Homepage</a> --- <a href="https://www.youtube.com/channel/UCS6Vaan7JFox6euCvOEycmA">YouTube</a> --- <a href="https://vanpi.de/pages/contact">Contact</a>
+<a target="_blank" href="https://forum.pekaway.de/">Forum</a> --- <a target="_blank" href="https://instagram.com/peka.way">Instagram</a> --- <a target="_blank" href="https://vanpi.de">Homepage</a> --- <a href="https://www.youtube.com/@VANPIbyPekaway">YouTube</a> --- <a href="https://vanpi.de/pages/contact">Contact</a>

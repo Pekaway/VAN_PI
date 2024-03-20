@@ -57,7 +57,7 @@ For the developers is a Node-RED backend and various Python scripts for expansio
 
 # Releases
 
-## VAN PI OS 2.0.0
+## VAN PI OS 2.0.0 will be released in April 2024
 - [Download](https://links.vanpi.de/downloads.html)
 
 ## Installation Script
@@ -141,7 +141,7 @@ NB-IOT is not stable for our application due to the high latency.
     - DALY BMS UART MONIT (3pin)
     - JBD BMS UART PORT
   
-  - [analog Shunt](https://cdn.shopify.com/s/files/1/0755/7287/1503/files/VPI-SHU_Quickstart.pdf?v=1685610402)
+  - analog Shunt *obsolet -> only works with the old Relayboard 
 <br>
     - Measuring the voltage drop across a SHUNT using the ads1115 on the VAN PI relayboard and the VAN PI HAT. Voltage measurement is done using a voltage divider. A Python script reads the data and makes it accessible by providing a Bottle webserver (port 8080), Node-RED then checks the endpoint(s) to get the values. Data remains in the RAM and is written to the SD-Card every 5min.
   
@@ -155,8 +155,12 @@ NB-IOT is not stable for our application due to the high latency.
     - [cyrils/renogy-bt: Python library to read Renogy compatible BT-1 or BT-2 bluetooth modules using Raspberry Pi. (github.com)](https://github.com/cyrils/renogy-bt) 
     - not yet installed in VAN PI OS 
 
-- Pekaway MPPT S20 - via Python Bluetooth read out
-	- SHOP LINK
+- Pekaway MPPT S20 - via Python Bluetooth read out <br>
+	- https://github.com/Pekaway/MPPT-S20-Python
+ 	- https://github.com/Pekaway/MPPT-S20-Flutter-App
+    
+  - Victron: <br>
+  	- VIA Ve.direct
 
   
   
@@ -214,16 +218,16 @@ Using the Node-RED web interface, any device can be used as a display. Here it c
   - [Sonoff NS Wifi Panel:](https://pekaway.de/blogs/tutorials/sonoff-ns-panel-wifi-touchscreen-v1-0) <br>
    We support the NS Panel and have prepared a VAN PI tft file for it. The data is send with MQTT. Please check this installation quide **in development**
    
-  - [Pekaway APP](https://pekaway.de/blogs/tutorials/sonoff-ns-panel-wifi-touchscreen-v1-0) <br>
-Control the device via our App.  The App is using the http&MQTT API. So if you planing your own software stack. If you provide our API (build in Node-Red) The app will also work on your software. 
+  - Pekaway APP <br>
+Control the device via our App.  The App is using the http&MQTT API. So if you planing your own software stack. If you provide our API (build in Node-Red) The app will also work on your software.
+	- [IOS](https://apps.apple.com/us/app/pekaway-connect/id6479257678)
+    	- [Android](https://play.google.com/store/apps/details?id=com.vanpi.pekaway&hl=en_IE&gl=US)
 
 
  ## GPS
   - GPS via RJ45UART <br>
 	  - You can connect a GPS module to the VAN PI Core using the RJ45 UART. All you need is a 3.3V module and a 12V -> 3.3V voltage converter. The module then sends the data to UART1 and is evaluated in Node-Red. Pay attention to the baud rate and check it in the connections Flow if necessary. 
 
-
-  - GPS via USB 
   - GPS via Pekaway IOT Bridge 4G and 4G+ 
 
 ## Other

@@ -1,35 +1,3 @@
-{
-  "name": "pekaway-vanpi",
-  "description": "initially created for you by Node-RED 2.2.2 ",
-  "version": "0.0.1",
-  "private": true,
-  "dependencies": {
-    "i2c-bus": "latest",
-    "node-mcp23017": "latest",
-    "node-red-contrib-binary": "latest",
-    "node-red-contrib-buffer-parser": "^3.2.2",
-    "node-red-contrib-countdown-2": "~1.4.2",
-    "node-red-contrib-cpu": "latest",
-    "node-red-contrib-ds18b20-sensor": "latest",
-    "node-red-contrib-i2c": "github:nielsnl68/node-red-contrib-i2c",
-    "node-red-contrib-linux-memory": "latest",
-    "node-red-contrib-mcp23017chip": "latest",
-    "node-red-contrib-pca9685": "~0.1.4",
-    "node-red-contrib-pid-controller": "latest",
-    "node-red-contrib-play-audio": "^2.5.0",
-    "node-red-contrib-queued-sqlite": "latest",
-    "node-red-contrib-sqlitedb": "latest",
-    "node-red-contrib-ui-time-scheduler": "~1.17.2",
-    "node-red-contrib-zigbee2mqtt": "~2.6.3",
-    "node-red-dashboard": "latest",
-    "node-red-node-pi-gpio": "^2.0.5",
-    "node-red-node-ping": "^0.3.3",
-    "node-red-node-random": "^0.4.1",
-    "node-red-node-serialport": "^1.0.1",
-    "node-red-node-smooth": "^0.1.2",
-    "node-red-node-sqlite": "latest",
-    "node-red-node-ui-list": "~0.3.6",
-    "npm-check-updates": "latest",
-    "package.json": "latest"
-  }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:1b50766a6a56d37842fb3dfb15f1f1684ebfb91f2be27cec13eabb604306b301
+size 1333

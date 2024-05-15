@@ -1,3 +1,5 @@
 *.stl filter=lfs diff=lfs merge=lfs -text
 *.tft filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
+*.bin filter=lfs diff=lfs merge=lfs -text
+*.json filter=lfs diff=lfs merge=lfs -text

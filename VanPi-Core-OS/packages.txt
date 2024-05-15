@@ -12,6 +12,7 @@ base-files
 base-passwd
 bash
 bash-completion
+bc
 binutils
 binutils-aarch64-linux-gnu
 binutils-common:arm64
@@ -19,6 +20,7 @@ bluez
 bluez-firmware
 bsdextrautils
 bsdutils
+btop
 build-essential
 busybox
 bzip2
@@ -462,6 +464,7 @@ linux-kbuild-6.6.20+rpt
 linux-kbuild-6.6.28+rpt
 linux-libc-dev
 locales
+log2ram
 login
 logrotate
 logsave
@@ -501,6 +504,7 @@ p7zip
 p7zip-full
 parted
 passwd
+pastebinit
 patch
 pci.ids
 pciutils
@@ -574,7 +578,6 @@ rpcbind
 rpcsvc-proto
 rpi-eeprom
 rpi-update
-rpi.gpio-common:arm64
 rpicam-apps-lite
 rsync
 runit-helper
@@ -622,4 +625,5 @@ xz-utils
 zip
 zlib1g:arm64
 zlib1g-dev:arm64
+zram-tools
 zstd

@@ -1,3 +1,14 @@
+# Update 2.0.0 (14 May 2024)
+- added an i2c check t boot to automatically turn on/off dimmers in frontend
+- renamed MCP input section to "Switches Inputs"
+- added an notification to show which input has been triggered when focus is on Switches Input screen
+- added reminder to restart ESP32 wireless shunt before setting values
+- rewrote python script to set shunt data to be more reliable
+- prepared support for 2nd generation Shellie Switches ("Plus", experimental)
+- added udev rules to differentiate between zigbee dongles (USB2) and GPS usb mouse (USB1)
+- activated zram and log2ram, purged dphys-swapfile to reduce SD-card wear
+- minor bug fixes and additions (notification pop-ups etc.)
+
 # Update 2.0.0 BETA2 (10 May 2024)
 - upgraded to latest Raspi OS (Debian 12 Bookworm)
 - upgraded NodeJS to v22.0.0 with npm v10.6.0 and Node-RED v3.1.9

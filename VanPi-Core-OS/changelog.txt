@@ -1,3 +1,46 @@
+# Update 2.0.1 (19 July 2024)
+- fixed the function that initializes the autoturnoffs on boot
+- autoturnoffs do now show actual relay names instead of placeholders
+- if an autoturnoff is running, it will restart the timer on reboot
+- changed the function that kills all BLE scripts to use '&' instead of '&&' to stop the function from stopping on an errors
+- changed the initialization of switches names
+- added a function to show at which time switches will automatically turn off (autoturnoffs)
+- changed the autooffslider to an numeric input (0-300 minutes)
+- rewrote the function that initializes the autooff timings
+- removed the check for I2C-address of PCA9685@0x55 on dimmer usage
+    - invalid inputs will just go "into the void"
+- added a gamma correction value to the dimmers, which allows for higher precision on lower dimmer values
+- rewrote the function that executes dimmer commands from digital inputs
+    - dimmers are now much smoother
+    - dimmers can be combined (might be laggy on wireless dimmy connections)
+- rewrote the functions that initializes relays, w-relays and dimmers
+- added a function to turn everything off and back on from digital inputs (set the input type to button!)
+- added a function to turn off only the selceted relays/dimmers on an input (set the input type to button!)
+    - mcpinput_types are not set on freshly flashed images!
+- added info the where GPS (USB1) and Zigbee (USB2) have to be connected
+- added RuuviTags to monitor flow
+- added a function to show Temperatures and RuuviTags in combined charts instead of single charts for every sensor
+- fixed function to show inside temp sensor on touchdisplay when a RuuviTag is set
+- copied the ACT LED to the external LED on the VAN PI Core PCB on GPIO22
+    - THIS MAY LEAD TO UNEXPECTED BEHAVIOUR ON OLDER BOARDS (the blue one), IF GPIOs ARE USED TO TRIGGER RELAYS
+    - (VAN PI Core and the black VAN PI Relayboard use the MCP23017)
+    - (only the older blue Relayboard uses GPIOs!)
+- slightly reworked the python script that reads out the MPU6050 to use atan2 function instead of atan for more precision
+- the z-angle will be printed out as well now
+- added options to swap X or Y with the Z axis (to ensure corrections on different installation angles)
+- moved the switch to activate position sensor tab to the Sensors Config menu
+    - moved the config for the position sensor to Sensors > Position Sensor Config to avoid accidental recalibrations
+- Position Sensor is now active by default on new images
+- added I2C-check for 0x69 on boot to automatically show/hide Position Sensor tab
+- added another check to solar_surplus_consumption (experimental)
+    - relays will only turn on if mppt_data is not older than 15min
+    - relays will turn off (if turned on from mppt_data) if mppt_data is older than 15min
+- added temperature automations to trigger relays when sensors hit certain threshholds
+- added function to switch to a "Modern Dark" theme
+- added RAM info to debug menu
+- added function that stops requests hitting the public Pekaway server for remote access when no username/password is provided
+- added function to show time to go in real time (rather than only average value calculated over the last 5min)
+
 # Update 2.0.0 (14 May 2024)
 - added an i2c check t boot to automatically turn on/off dimmers in frontend
 - renamed MCP input section to "Switches Inputs"

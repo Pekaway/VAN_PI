@@ -4,7 +4,7 @@ mqtt:
   base_topic: zigbee2mqtt
   server: mqtt://localhost:1883
 serial:
-  port: /dev/ttyACM0
+  port: /dev/ttyZigbee
 advanced:
   network_key: GENERATE
 log_level: info

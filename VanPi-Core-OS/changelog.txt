@@ -1,3 +1,47 @@
+# Update 2.0.2 (04 October 2024)
+- inserted functions to set fixed positions for temp sensors
+    - see Config > Sensors > Temp Sensor Positions
+    - if new sensors are connected, the IDs for older sensors have to be removed manually
+    - additional sensors will be shown in an extra group with their values and IDs
+    - rewrote the ds18b20.py script to return the sensor IDs
+- added global mptt variables to VE.Driect flow
+- set interval to retrieve ip-address (wlan0 & eth0) to 20s for faster recognition on change
+- added new mqtt message to dimmer section to pass states to Homebridge
+- updated Homebridge to v1.8.4 and Homebridge UI to v4.5.8
+- fixed temp automations trigger for "below"
+    - (trigger did execute if the variable in question was undefined)
+- new switch option to use the older (black) Relayboard
+    - will show/hide wired shunt (under Wireless > Shunt)
+    - rewrote flow/nodes that retrieve data from the wired shunt
+    - option to read water levels every second will not work on older relayboard!
+- new BETA(!) support for RPI5 
+    - udev rules have been expanded 
+    - Zigbee and GPS are switched (USB Port numbers) on RPI5!
+        - Zigbee is now available on USB1 and GPS on USB2 (only RPI5!)
+        - RPI4 is still GPS on USB1 and Zigbee on USB2
+        - added an overview table to the config menu for RPI5 USB ports
+    - added new global variable 'cpumodel' to check if we have RPI4 or RPI5
+    - setting of GPIOs when waterlevels are initialised now uses 'pinctrl' instead of 'raspi-gpio'
+        - only on RPI5 and only on the newer Core board, older ones still use the jumpers
+    - enabled uart0 on RPI5 for the touchdisplay and added a new connection for ttyAMA0, to have the uart available. 
+        - RPI4 uses ttyS0, RPI5 uses ttyAMA0
+        - depending on the RPI model used, one of the ports will therefore always report that it can't connect 
+- when using dimmers on the functions for 'alloff' and 'selected alloff' (digital inputs), they will now dim down to 0 instead of just shutting down
+    - only works on dimming down, not when triggering the 'dim back up' function
+- digital inputs set to dimmers will now only dim (long push) to a minimum level of 5% instead of 0%
+    - use a short push to completely turn off dimmers
+    - if saved value is below 10% and dimmer is currently off, a short push will always dim up to 20%
+    - values are only saved when using short pushes on the digital inputs, not when dimming down from dashboard/touchdisplay/app
+- boiler functions got a slight rework:
+    - dropdowns do now show the names for relays etc. 
+    - added a function to set a water level, so that the boiler is only triggered if the water level is above a set threshhold (optional)
+- fixed the initialization of inputs 7 & 8 on boot
+- fixed triggering of MainBattData notification when updating temp names
+- fixed some NaN warnings from monitor flow (which were visible in system/NR log)
+- fixed RuuviTags not showing in touchdisplay when set as inside temp sensor
+- reduced max_old_space_size for NR to 512 to reduce risk for OOM error
+- CPU temp in monitor tab now ranges in green color up to 65°C
+
 # Update 2.0.1 (19 July 2024)
 - fixed the function that initializes the autoturnoffs on boot
 - autoturnoffs do now show actual relay names instead of placeholders

@@ -11,8 +11,8 @@
 ########################################################
 
 # define variables
-Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-OS/'
-ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-OS/'
+Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
+ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
 Version='v2.0.2'		### <--- set new version number VanPi OS
 NSPanelVersion='0.0.1'	### <--- set new version number NSPanel
 TouchdisplayVersion='1.0.5'	### <--- set new version number Touchdisplay
@@ -20,7 +20,7 @@ currentVersion=`cat ~/pekaway/version`
 steps='9' ### <--- number of total steps for progessbar
 
 # prepare variables to be compared
-VersionToCheck='v2.0.1' # Version that has relevant changes in update script
+VersionToCheck='v2.0.0' # Version that has relevant changes in update script
 # (if current version number is below that number than this script will execute without the need for confirmation)
 # (script will not ask for confirmation if started from Node-RED dashboard directly)
 
@@ -56,6 +56,70 @@ newVersion3=${version_array[2]}
 
 echo "This script needs to be run as a sudo user. Press CTRL+C to abort at any time."
 echo -e "logfile will be at ${LOG_FILE}"
+
+#####################################################
+# Compare OS version and kernel version
+#
+# Get the Debian codename from /etc/os-release
+OS_CODENAME=$(grep "VERSION_CODENAME" /etc/os-release | cut -d'=' -f2)
+
+# Get the current kernel version
+KERNEL_VERSION=$(uname -r | cut -d'-' -f1)
+
+# Get the current Python version
+PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
+
+# Define the minimum required OS version (Debian Bookworm) and kernel version
+MIN_VERSION="bookworm"
+MIN_KERNEL_VERSION="6.1"
+
+# Function to compare two version numbers
+version_greater_equal() {
+    # Compare version numbers
+    [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" == "$2" ]
+}
+
+# Function to compare OS versions using codename
+compare_os_versions() {
+    # Array of Debian codenames in chronological order
+    versions=("buster" "bullseye" "bookworm" "trixie")
+
+    # Find the index of current and minimum versions
+    for i in "${!versions[@]}"; do
+        if [[ "${versions[$i]}" == "$1" ]]; then
+            current_index=$i
+        fi
+        if [[ "${versions[$i]}" == "$2" ]]; then
+            min_index=$i
+        fi
+    done
+
+    # Compare the index values to determine if an update is needed
+    if [[ "$current_index" -lt "$min_index" ]]; then
+        echo "Error: System is running $1. Please upgrade to $2 or later." | sudo tee ${Progress}
+        exit 1
+    fi
+}
+
+# Check OS version
+compare_os_versions "$OS_CODENAME" "$MIN_VERSION"
+
+# Check Kernel version
+if ! version_greater_equal "$KERNEL_VERSION" "$MIN_KERNEL_VERSION"; then
+    echo "Error: Kernel version is $KERNEL_VERSION. Please upgrade to kernel $MIN_KERNEL_VERSION or newer." | sudo tee ${Progress}
+    exit 1
+fi
+
+# Check Python version
+if ! version_greater_equal "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"; then
+    echo "Your Python version is $PYTHON_VERSION. Please upgrade to Python $MIN_PYTHON_VERSION or newer." | sudo tee ${Progress}
+    exit 1
+fi
+
+echo "Your system is running Debian $OS_CODENAME, kernel $KERNEL_VERSION, and Python $PYTHON_VERSION, all of which are up-to-date."
+echo "Continuing..."
+#####################################################
+
 
 if [[ $currentVersion1 -lt $newVersion1 ]]; then
   echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
@@ -106,6 +170,9 @@ rm -f package.json
 rm -f pip3list.txt
 rm -f VanPI_NSPANEL.tft
 rm -f autoexec.be
+rm -f /ads_py/simplelevel.py
+rm -f /ads_py/web2.py
+rm -f /ds18b20_py/ds18b20.py
 
 sudo rm -f /boot/*.tft # delete old .tft for touchdisplay if it exists
 
@@ -114,19 +181,24 @@ sudo rm -f /boot/*.tft # delete old .tft for touchdisplay if it exists
 
 # download new files packages.txt and package.json
 echo "downloading new files"
-wget ${Server}packages.txt
-wget ${Server}package.json
-wget ${Server}pip3list.txt
-wget ${ServerFiles}NSPanel/VanPI_NSPANEL.tft
-wget ${Server}NSPanel/autoexec.be
+wget ${ServerFiles}packages.txt
+wget ${ServerFiles}node-red/package.json
+wget ${ServerFiles}piplist.txt
+wget ${ServerFiles}data/userdata/NSPanel/VanPI_NSPANEL.tft
+wget ${ServerFiles}data/userdata/NSPanel/autoexec.be
+wget ${ServerFiles}data/ads_py/simplelevel.py
+wget ${ServerFiles}data/ads_py/web2.py
+wget ${ServerFiles}ds18b20_py/ds18b20.py
+wget ${ServerFiles}misc/boot_config.txt
+wget ${ServerFiles}misc/98-pekaway-tty.rules.txt
 
 # get new files here
-wget ${Server}newFilesForUpdate/supervolt_flybat.py
-wget ${ServerFiles}Touchdisplay/PekawayTouch.tft
+#wget ${Server}newFilesForUpdate/supervolt_flybat.py
+wget ${ServerFiles}touchdisplay/PekawayTouch.tft
 
 # create files for mcp inputs if the don't exist
 # add json into files if they don't exist
-for i in {1..6}
+for i in {1..8}
 do
 	touch ~/pekaway/mcpinput"$i"
 	touch ~/pekaway/mcpinput"$i"_type
@@ -151,21 +223,30 @@ do
 done
 
 
-
-
 # move TouchDisplay .tft file to /boot to be able to use SD-card to update Touchdisplay
 sudo chown root:root PekawayTouch.tft # cannot preserve ownership in root directory
 sudo mv PekawayTouch.tft /boot/PekawayTouch${TouchdisplayVersion}.tft
 
 
 # move new files here
-mv supervolt_flybat.py ~/pekaway/ble_py/supervolt_flybat.py
+mv -f ds18b20.py ~/pekaway/ds18b20_py/ds18b20.py
+mv -f simplelevel.py ~/pekaway/ads_py/simplelevel.py
+mv -f web2.py ~/pekaway/ads_py/web2.py
+sudo mv -f boot_config.txt /boot/firmware/config.txt
+sudo mv -f 98-pekaway-tty.rules.txt /etc/udev/rules.d/98-pekaway-tty.rules.txt
+#mv supervolt_flybat.py ~/pekaway/ble_py/supervolt_flybat.py
 
-sleep 3
+sleep 2
+# reload udev rules and nginx
+sudo udevadm control --reload-rules && sudo udevadm trigger
+sudo systemctl reload nginx
+sleep 1
+
 echo "Step 3/${steps}: installing packages" | sudo tee ${Progress}
 # copy NSPanel .tft file to ~/pekaway/userdata/NSPanel to show up in NR-Dashboard
 mkdir -p ~/pekaway/userdata/NSPanel
-cp VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL${NSPanelVersion}.tft
+cp -f VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL${NSPanelVersion}.tft
+cp -f autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be -f
 
 # make a backup of the existing package.json and replace it with the new file
 cp ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json
@@ -236,19 +317,19 @@ cd ~/pekaway
 # Install/update python modules locally (user pi) and globally (root)
 sleep 3
 echo "Step 6/${steps}: checking python modules" | sudo tee ${Progress}
-echo "installing python modules, please stand by..."
-sudo -H pip3 install --upgrade pip 
-sudo pip3 install -r ~/pekaway/pip3list.txt
-sudo pip3 install bottle
-pip3 install -r ~/pekaway/pip3list.txt
-pip3 install bottle
-echo "done"
+echo "Installing Python modules with --break-system-packages, please stand by..."
+sudo -H pip3 install --upgrade pip --break-system-packages
+sudo pip3 install -r ~/pekaway/piplist.txt --break-system-packages
+sudo pip3 install bottle --break-system-packages
+pip3 install -r ~/pekaway/piplist.txt --break-system-packages
+pip3 install bottle --break-system-packages
+echo "Done."
 
 sleep 3
 echo "Step 7/${steps}: backing up flows" | sudo tee ${Progress}
 
 # remove downloaded files
-rm -f ~/pekaway/packages.txt && rm -f ~/pekaway/package.json && rm -f ~/pekaway/pip3list.txt
+rm -f ~/pekaway/packages.txt && rm -f ~/pekaway/package.json && rm -f ~/pekaway/piplist.txt
 
 # backup Node-RED flows
 echo "backing up original Node-RED flows"
@@ -266,12 +347,12 @@ echo "1" >| ~/pekaway/update
 sleep 3
 echo "Step 8/${steps}: getting new flows" | sudo tee ${Progress}
 echo "replacing local flows.json file with new one from the server"
-curl ${Server}flows.json > ~/pekaway/pkwUpdate/flows_pekaway.json 
+wget --no-use-server-timestamps -P ~/pekaway/pkwUpdate/ ${ServerFiles}node-red/flows_pekaway.json
 cp ~/pekaway/pkwUpdate/flows_pekaway.json ~/.node-red/flows_pekaway.json
 echo "update script finished! You can find the logfile at ${LOG_FILE}."
 rm ~/pekaway/pkwUpdate/flows_pekaway.json
 sleep 3
-echo "Step 9/${steps}: restarting..." | sudo tee ${Progress}
+echo "Step 9/${steps}: restarting Node-RED..." | sudo tee ${Progress}
 sleep 5
 sudo truncate -s 0 ${Progress}
 sudo systemctl restart nodered.service

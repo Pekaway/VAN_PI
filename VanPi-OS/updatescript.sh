@@ -13,14 +13,14 @@
 # define variables
 Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-OS/'
 ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-OS/'
-Version='v2.0.2'		### <--- set new version number VanPi OS
+Version='v1.1.2'		### <--- set new version number VanPi OS
 NSPanelVersion='0.0.1'	### <--- set new version number NSPanel
 TouchdisplayVersion='1.0.5'	### <--- set new version number Touchdisplay
 currentVersion=`cat ~/pekaway/version`
 steps='9' ### <--- number of total steps for progessbar
 
 # prepare variables to be compared
-VersionToCheck='v2.0.1' # Version that has relevant changes in update script
+VersionToCheck='v1.1.1' # Version that has relevant changes in update script
 # (if current version number is below that number than this script will execute without the need for confirmation)
 # (script will not ask for confirmation if started from Node-RED dashboard directly)
 
@@ -275,3 +275,4 @@ echo "Step 9/${steps}: restarting..." | sudo tee ${Progress}
 sleep 5
 sudo truncate -s 0 ${Progress}
 sudo systemctl restart nodered.service
+

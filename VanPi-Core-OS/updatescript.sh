@@ -275,7 +275,6 @@ if [[ -n $extramodules ]]; then
 		echo "Missing lines have been added to package.json"
 		echo "New package.json:"
 		cat ~/.node-red/package.json
-		exit
    else
 		while true; do
 			read -r -p "Do you want them to be added to the new package.json? [y/n]" input

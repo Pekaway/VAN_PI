@@ -1,3 +1,5 @@
+# original script to read out water levels on Pekaway VANPI OS v2.x.x (Debian Bookworm, Board: VANPI Core)
+
 import argparse
 import time
 import json

@@ -218,12 +218,14 @@ libebml5:arm64
 libedit2:arm64
 libelf1:arm64
 liberror-perl
+libestr0:arm64
 libevent-core-2.1-7:arm64
 libexif12:arm64
 libexpat1:arm64
 libexpat1-dev:arm64
 libext2fs2:arm64
 libfakeroot:arm64
+libfastjson4:arm64
 libfdisk1:arm64
 libfdt1:arm64
 libffi8:arm64
@@ -259,7 +261,9 @@ libhwasan0:arm64
 libi2c0:arm64
 libicu72:arm64
 libidn2-0:arm64
+libio-pty-perl
 libip4tc2:arm64
+libipc-run-perl
 libisl23:arm64
 libitm1:arm64
 libiw30:arm64
@@ -286,6 +290,7 @@ libldap-common
 liblerc4:arm64
 liblgpio1:arm64
 liblocale-gettext-perl
+liblognorm5:arm64
 liblsan0:arm64
 liblttng-ust-common1:arm64
 liblttng-ust-ctl5:arm64
@@ -409,6 +414,8 @@ libtext-charwidth-perl:arm64
 libtext-iconv-perl:arm64
 libtext-wrapi18n-perl
 libtiff6:arm64
+libtime-duration-perl
+libtimedate-perl
 libtinfo6:arm64
 libtirpc-common
 libtirpc-dev:arm64
@@ -469,6 +476,7 @@ login
 logrotate
 logsave
 lsb-release
+lsof
 lua5.1
 luajit
 make
@@ -479,6 +487,7 @@ mawk
 media-types
 mkvtoolnix
 modemmanager
+moreutils
 mosquitto
 mosquitto-clients
 mount
@@ -580,6 +589,7 @@ rpi-eeprom
 rpi-update
 rpicam-apps-lite
 rsync
+rsyslog
 runit-helper
 sed
 sensible-utils
@@ -588,6 +598,7 @@ shared-mime-info
 ssh
 ssh-import-id
 strace
+stress
 sudo
 systemd
 systemd-sysv

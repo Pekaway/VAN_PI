@@ -14,6 +14,7 @@ bottle
 certifi
 chardet
 charset-normalizer
+click
 clint
 colorzero
 dbus-fast
@@ -48,4 +49,5 @@ sysv-ipc
 toml
 typing_extensions
 urllib3
+w1thermsensor
 wheel

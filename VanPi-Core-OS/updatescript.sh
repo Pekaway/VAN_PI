@@ -181,16 +181,16 @@ sudo rm -f /boot/*.tft # delete old .tft for touchdisplay if it exists
 
 # download new files packages.txt and package.json
 echo "downloading new files"
-wget ${ServerFiles}packages.txt
-wget ${ServerFiles}node-red/package.json
-wget ${ServerFiles}piplist.txt
-wget ${ServerFiles}data/userdata/NSPanel/VanPI_NSPANEL.tft
-wget ${ServerFiles}data/userdata/NSPanel/autoexec.be
-wget ${ServerFiles}data/ads_py/simplelevel.py
-wget ${ServerFiles}data/ads_py/web2.py
-wget ${ServerFiles}ds18b20_py/ds18b20.py
-wget ${ServerFiles}misc/boot_config.txt
-wget ${ServerFiles}misc/98-pekaway-tty.rules.txt
+wget -N --no-use-server-timestamps ${ServerFiles}packages.txt
+wget -N --no-use-server-timestamps ${ServerFiles}node-red/package.json
+wget -N --no-use-server-timestamps ${ServerFiles}piplist.txt
+wget -N --no-use-server-timestamps ${ServerFiles}data/userdata/NSPanel/VanPI_NSPANEL.tft
+wget -N --no-use-server-timestamps ${ServerFiles}data/userdata/NSPanel/autoexec.be
+wget -N --no-use-server-timestamps ${ServerFiles}data/ads_py/simplelevel.py
+wget -N --no-use-server-timestamps ${ServerFiles}data/ads_py/web2.py
+wget -N --no-use-server-timestamps ${ServerFiles}ds18b20_py/ds18b20.py
+wget -N --no-use-server-timestamps ${ServerFiles}misc/boot_config.txt
+wget -N --no-use-server-timestamps ${ServerFiles}misc/98-pekaway-tty.rules.txt
 
 # get new files here
 #wget ${Server}newFilesForUpdate/supervolt_flybat.py

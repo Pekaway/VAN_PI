@@ -254,7 +254,7 @@ cp ~/pekaway/package.json ~/.node-red/package.json
 
 # install packages and dependencies
 sudo apt update
-sudo apt install $(cat ~/pekaway/packages.txt) -y
+sudo apt install -y -o Dpkg::Options::="--force-confold" $(cat ~/pekaway/packages.txt)
 cd ~/.node-red
 
 # compare older package.json with new one and ask for merging

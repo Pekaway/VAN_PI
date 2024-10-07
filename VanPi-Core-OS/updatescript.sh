@@ -188,9 +188,9 @@ wget -N --no-use-server-timestamps ${ServerFiles}data/userdata/NSPanel/VanPI_NSP
 wget -N --no-use-server-timestamps ${ServerFiles}data/userdata/NSPanel/autoexec.be
 wget -N --no-use-server-timestamps ${ServerFiles}data/ads_py/simplelevel.py
 wget -N --no-use-server-timestamps ${ServerFiles}data/ads_py/web2.py
-wget -N --no-use-server-timestamps ${ServerFiles}ds18b20_py/ds18b20.py
+wget -N --no-use-server-timestamps ${ServerFiles}data/ds18b20_py/ds18b20.py
 wget -N --no-use-server-timestamps ${ServerFiles}misc/boot_config.txt
-wget -N --no-use-server-timestamps ${ServerFiles}misc/98-pekaway-tty.rules.txt
+wget -N --no-use-server-timestamps ${ServerFiles}misc/98-pekaway-tty.rules
 
 # get new files here
 #wget ${Server}newFilesForUpdate/supervolt_flybat.py
@@ -233,7 +233,7 @@ mv -f ds18b20.py ~/pekaway/ds18b20_py/ds18b20.py
 mv -f simplelevel.py ~/pekaway/ads_py/simplelevel.py
 mv -f web2.py ~/pekaway/ads_py/web2.py
 sudo mv -f boot_config.txt /boot/firmware/config.txt
-sudo mv -f 98-pekaway-tty.rules.txt /etc/udev/rules.d/98-pekaway-tty.rules.txt
+sudo mv -f 98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules
 #mv supervolt_flybat.py ~/pekaway/ble_py/supervolt_flybat.py
 
 sleep 2

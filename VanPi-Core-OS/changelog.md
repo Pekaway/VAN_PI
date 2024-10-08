@@ -36,7 +36,7 @@
     - boiler settings have been moved to Config > Boiler Control
     - dropdowns do now show the names for relays etc. 
     - added a function to set a water level, so that the boiler is only triggered if the water level is above a set threshhold (optional)
-    - an error from a tempsensor will turn off the boiler and also the auto temp control settings!
+    - an error from a tempsensor will turn off the boiler (when auto temp control enabled) and also the auto temp control settings!
 - fixed the initialization of inputs 7 & 8 on boot
 - fixed triggering of MainBattData notification when updating temp names
 - fixed some NaN warnings from monitor flow (which were visible in system/NR log)

@@ -374,4 +374,31 @@ sleep 3
 echo "Step 9/${steps}: restarting Node-RED..." | sudo tee ${Progress}
 sleep 5
 sudo truncate -s 0 ${Progress}
+
+# Get confirmation to continue on manual update
+if [[ "$1" == "node-red-auto-update" ]]; then
+	echo -e "Not asking for confirmation, rebooting automatically."
+	sleep 3
+	sudo reboot
+else
+	while true; do
+		read -r -p "Do you want to reboot now? [y/n] " input
+
+		case $input in
+			[yY][eE][sS]|[yY])
+				sudo reboot
+				break
+				;;
+			[nN][oO]|[nN])
+				echo "Reboot cancelled. Please remember to reboot for the VanPi system to work properly!"
+				exit
+				;;
+			*)
+				echo "Invalid input... please type 'y' (yes) or 'n' (no)"
+				;;
+		esac
+	done
+fi
+
+# when no reboot, only restart nodered
 sudo systemctl restart nodered.service

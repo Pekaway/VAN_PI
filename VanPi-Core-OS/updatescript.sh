@@ -191,6 +191,7 @@ wget -N --no-use-server-timestamps ${ServerFiles}data/ads_py/web2.py
 wget -N --no-use-server-timestamps ${ServerFiles}data/ds18b20_py/ds18b20.py
 wget -N --no-use-server-timestamps ${ServerFiles}misc/boot_config.txt
 wget -N --no-use-server-timestamps ${ServerFiles}misc/98-pekaway-tty.rules
+wget -N --no-use-server-timestamps ${ServerFiles}nginx/pekaway1
 
 # get new files here
 #wget ${Server}newFilesForUpdate/supervolt_flybat.py
@@ -238,12 +239,15 @@ mv -f simplelevel.py ~/pekaway/ads_py/simplelevel.py
 mv -f web2.py ~/pekaway/ads_py/web2.py
 sudo mv -f boot_config.txt /boot/firmware/config.txt
 sudo mv -f 98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules
+sudo mv -f pekaway1 /etc/nginx/sites-available/pekaway1
+# create symlink for nginx pekaway1
+sudo ln -s /etc/nginx/sites-available/pekaway1 /etc/nginx/sites-enabled/pekaway1
 #mv supervolt_flybat.py ~/pekaway/ble_py/supervolt_flybat.py
 
 sleep 2
 # reload udev rules and nginx
 sudo udevadm control --reload-rules && sudo udevadm trigger
-sudo systemctl reload nginx
+sudo systemctl restart nginx
 sleep 1
 
 echo "Step 3/${steps}: installing packages" | sudo tee ${Progress}
@@ -256,9 +260,24 @@ cp -f autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be -f
 cp ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json
 cp ~/pekaway/package.json ~/.node-red/package.json
 
-# install packages and dependencies
+# Update package list
 sudo apt update
+
+# Upgrade all installed packages while keeping existing configuration files
+sudo apt upgrade -y -o Dpkg::Options::="--force-confold"
+
+# Perform a full upgrade, which may remove or install new packages as needed
+sudo apt full-upgrade -y -o Dpkg::Options::="--force-confold"
+
+# Install packages listed in ~/pekaway/packages.txt and keep old config files
 sudo apt install -y -o Dpkg::Options::="--force-confold" $(cat ~/pekaway/packages.txt)
+
+# Clean up unnecessary package files to free space
+sudo apt clean
+
+# Remove unused packages and dependencies
+sudo apt autoremove -y
+
 cd ~/.node-red
 
 # compare older package.json with new one and ask for merging

@@ -266,9 +266,6 @@ sudo apt update
 # Upgrade all installed packages while keeping existing configuration files
 sudo apt upgrade -y -o Dpkg::Options::="--force-confold"
 
-# Perform a full upgrade, which may remove or install new packages as needed
-sudo apt full-upgrade -y -o Dpkg::Options::="--force-confold"
-
 # Install packages listed in ~/pekaway/packages.txt and keep old config files
 sudo apt install -y -o Dpkg::Options::="--force-confold" $(cat ~/pekaway/packages.txt)
 

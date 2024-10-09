@@ -27,7 +27,7 @@ chmod +x vanpi-core-init.sh &&
 bash vanpi-core-init.sh
 ```
 
-- The script will take about 10-20min to run through, depending on bandwith and hardware
+- The script will take about 10-20min to run through, depending on bandwith and hardware, several 100s of megabytes may be downloaded, as we're updating/upgrading and installing packages
 - Confirm if inputs are needed
 - Sit back and relax
 

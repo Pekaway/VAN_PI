@@ -230,6 +230,7 @@ touch ~/pekaway/combined_ruuvi_chart
 
 # move TouchDisplay .tft file to /boot to be able to use SD-card to update Touchdisplay
 sudo chown root:root PekawayTouch.tft # cannot preserve ownership in root directory
+sudo rm /boot/*.tft
 sudo mv PekawayTouch.tft /boot/PekawayTouch${TouchdisplayVersion}.tft
 
 

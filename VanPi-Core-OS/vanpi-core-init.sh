@@ -150,6 +150,7 @@ cd ~/pekaway
 # create folder structure:
 cp -r ~/VAN_PI/VanPi-Core-OS/data/* ~/pekaway/
 
+wget -O ~/VAN_PI/VanPi-Core-OS/misc/defaultvalues.json ${ServerFiles}misc/defaultvalues.json
 json_file="${HOME}/VAN_PI/VanPi-Core-OS/misc/defaultvalues.json"
 # Loop through the keys in the JSON file and create files with default values
 jq -r 'to_entries | .[] | "\(.key)=\(.value)"' "$json_file" | while IFS='=' read -r filename value; do
@@ -217,6 +218,8 @@ echo -e "${Cyan}Installing and configuring Nginx${NC}"
 sudo apt update && sudo apt install nginx -y
 sudo cp ~/VAN_PI/VanPi-Core-OS/nginx/pekaway1 /etc/nginx/sites-available/pekaway1
 sudo ln -s /etc/nginx/sites-available/pekaway1 /etc/nginx/sites-enabled/
+# remove the "default_server" statement fomr the default server block
+sudo sed -i 's/default_server//g' /etc/nginx/sites-available/default
 sudo systemctl reload nginx
 sudo systemctl enable nginx
 
@@ -286,6 +289,13 @@ sed -i 's/flows.json/flows_pekaway.json/g' ~/.node-red/settings.js
 sed -i 's/theme: "",/theme: "",\n        header: {\n            title: "Pekaway VAN PI Campercontrol",\n        },/g' ~/.node-red/settings.js
 sudo systemctl restart nodered.service
 
+# Clean up unnecessary package files to free space
+echo -e "${Cyan}Cleaning up unnecessary package files to free space${NC}"
+sudo apt clean
+
+# Remove unused packages and dependencies
+sudo apt autoremove -y
+
 end=`date +%s`
 enddate=`date`
 runtime=$((end-start))
@@ -300,13 +310,6 @@ echo -e "${Red}If connection is lost, RPI will reboot into Access Point Mode aut
 echo -e "${Red}Or use a wired connection instead, which is always preferred${NC}"
 echo -e "${Red}--> logfile is saved at ${LOG_FILE}${NC}"
 echo "yes" > ~/pekaway/firstboot
-
-# Clean up unnecessary package files to free space
-echo -e "${Cyan}Cleaning up unnecessary package files to free space${NC}"
-sudo apt clean
-
-# Remove unused packages and dependencies
-sudo apt autoremove -y
 
 while true; do
 	read -r -p "Do you want to reboot now? [y/n]" input

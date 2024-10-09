@@ -28,6 +28,7 @@ bash vanpi-core-init.sh
 ```
 
 - The script will take about 10-20min to run through, depending on bandwith and hardware, several 100s of megabytes may be downloaded, as we're updating/upgrading and installing packages
+- the script will install Node 20 and the latest Node-RED, while the original VanPi OS image runs Node 22 and may not have the most recent Node-RED version
 - Confirm if inputs are needed
 - Sit back and relax
 

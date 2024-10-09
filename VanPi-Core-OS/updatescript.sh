@@ -195,7 +195,7 @@ wget -N --no-use-server-timestamps ${ServerFiles}nginx/pekaway1
 
 # get new files here
 #wget ${Server}newFilesForUpdate/supervolt_flybat.py
-wget ${ServerFiles}touchdisplay/PekawayTouch.tft
+wget -N --no-use-server-timestamps ${ServerFiles}touchdisplay/PekawayTouch.tft
 
 # create files for mcp inputs if the don't exist
 # add json into files if they don't exist
@@ -254,7 +254,7 @@ echo "Step 3/${steps}: installing packages" | sudo tee ${Progress}
 # copy NSPanel .tft file to ~/pekaway/userdata/NSPanel to show up in NR-Dashboard
 mkdir -p ~/pekaway/userdata/NSPanel
 cp -f VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL${NSPanelVersion}.tft
-cp -f autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be -f
+cp -f autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be
 
 # make a backup of the existing package.json and replace it with the new file
 cp ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json

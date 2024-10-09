@@ -117,7 +117,7 @@ sudo apt install -y git make build-essential jq
 # enable I2C and 1-Wire
 echo -e "${Cyan}Enabling I2C and 1-Wire Bus${NC}"
 sudo raspi-config nonint do_i2c 0
-echo -e "dtoverlay=w1-gpio\ndtoverlay=uart5\ndtoverlay=uart0-pi5\ndtoverlay=uart4-pi5\nenable_uart=1\n\n# copy act led to external led on Van Pi Core board\ndtoverlay=gpio-led,gpio=22,label=vpicore_act_led,trigger=mmc0" | sudo tee -a /boot/config.txt
+echo -e "dtoverlay=w1-gpio\ndtoverlay=uart5\ndtoverlay=uart0-pi5\ndtoverlay=uart4-pi5\nenable_uart=1\n\n# copy act led to external led on Van Pi Core board\ndtoverlay=gpio-led,gpio=22,label=vpicore_act_led,trigger=mmc0" | sudo tee -a /boot/firmware/config.txt
 
 # Set iptables-persistent to true
 sudo debconf-set-selections <<EOF

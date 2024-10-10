@@ -1,49 +1,57 @@
-## Manually installing the VanPi system
+## Manually Installing the VanPi System
 
-- Get a Raspberry Pi 4 or Raspberry Pi 5
-- Get a clean install of Raspberry Pi OS (Debian 12 Bookworm) on a MicroSD-card - ([download here](https://www.raspberrypi.com/software/operating-systems/))
+1. **Get a Raspberry Pi 4 or Raspberry Pi 5.**
+2. **Obtain a clean install of Raspberry Pi OS (Debian 12 Bookworm) on a MicroSD card** - ([download here](https://www.raspberrypi.com/software/operating-systems/)).
+   - The script checks if the OS is at least Debian 12 Bookworm, with Linux kernel 6.1+ and Python 3.11+.
 
- - Using the Raspberry Pi Imager ([download here](https://www.raspberrypi.com/software/)), set the following options
-    - Hostname: pekaway.local
-    - activate ssh
-    - username: pi
-    - password: raspberry
-    - wifi:
-        - Your wifi SSID and passphrase
-        - change wifi country if needed
-    - change language if needed
-    - change keyboardlayout if needed
+3. **Use the Raspberry Pi Imager** ([download here](https://www.raspberrypi.com/software/)), and set the following options:
+    - Hostname: `pekaway.local`
+    - Activate SSH
+    - Username: `pi`
+    - Password: `raspberry`
+    - Wi-Fi:
+        - Set your Wi-Fi SSID and passphrase
+        - Change Wi-Fi country if needed
+    - Change language if needed
+    - Change keyboard layout if needed
 
-- Flash the operating system to your sd card
+4. **Flash the operating system to your SD card.**
 
+5. **Insert the SD card into the Raspberry Pi and power it on** (the first boot may take a few minutes).
+6. **Wait until it appears on your network, then log in via SSH** using the credentials you set.
+7. **Once logged in, run the following commands:**
+    ```bash
+    cd ~/
+    wget https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/vanpi-core-init.sh
+    chmod +x vanpi-core-init.sh
+    bash vanpi-core-init.sh
+    ```
 
-- Put the SD-card into the RPI and power it on (first boot may take a few minutes)
-- Wait until it shows up in your network and login via SSH with the credentials you just set
-- Once logged in do
+8. **The script will take about 10-20 minutes to complete**, depending on your bandwidth and hardware. Several hundred megabytes may be downloaded as the script updates, upgrades, and installs packages.
+   - The script will install Node.js 20 and the latest Node-RED. Note that the original VanPi OS image runs Node.js 22 and may not have the most recent Node-RED version.
+9. **Confirm if any inputs are required** (typically none, everything should run automatically until you're asked to reboot and the end of the script).
+10. **Sit back and relax** while the installation proceeds.
+
+Once the process is complete, the Raspberry Pi will power up in Access Point Mode. Connect to it and proceed from there, or use a wired connection.
+
+### **Setting Up Homebridge**
+
+You will need to configure Homebridge by accessing `http://RPI-IP:8581` or `http://pekaway.local:8581`. Set the username to `admin` and the password to `pekawayfetzt` (or another preferred password) and continue. The configuration should already be present, or you can find it [here](https://github.com/Pekaway/VAN_PI/blob/main/VanPi-Core-OS/homebridge/config.json). (Note: This is not fully tested yet!)
+- You may need to reset Homebridge through the Node-RED frontend to generate a new random MAC address before it can be connected to Apple Home.
+
+Go to the VanPi system frontend, navigate to **Config > Wi-Fi**, and click on **Reset Homebridge**. This will generate a new random MAC address, a new pin code, and download the latest Homebridge configuration from our server and deploy it. Ensure that you're connected to the internet for Apple Home and the configuration download to work.
+
+---
+
+## **TROUBLESHOOTING**
+
+### Symbols Not Displayed Correctly (e.g., "°C")
+If symbols are not displayed correctly in the frontend, download the `flows_pekaway.json` from the VanPi-Core-OS folder ([download here](https://github.com/Pekaway/VAN_PI/blob/main/VanPi-Core-OS/node-red/flows_pekaway.json)).
+
+On your Raspberry Pi, open `~/.node-red/flows_pekaway.json` and manually replace its content with the content from the downloaded file. Then restart Node-RED using the following command:
+```bash
+sudo systemctl restart nodered.service
 ```
-cd ~/ &&
-wget https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/vanpi-core-init.sh &&
-chmod +x vanpi-core-init.sh &&
-bash vanpi-core-init.sh
-```
-
-- The script will take about 10-20min to run through, depending on bandwith and hardware, several 100s of megabytes may be downloaded, as we're updating/upgrading and installing packages
-- the script will install Node 20 and the latest Node-RED, while the original VanPi OS image runs Node 22 and may not have the most recent Node-RED version
-- Confirm if inputs are needed
-- Sit back and relax
-
-Once done, the RPI will power up in Access Point Mode, connect to it and proceed from there
-(Or use a wired connection)
-
-Homebridge needs to be setup, you can do that when accessing RPI-IP:8581 or pekaway.local:8581 - set admin:pekawayfetzt (or whatever you prefer) and continue from there, config should already be there (or you can find it [here](https://github.com/Pekaway/VAN_PI/blob/main/VanPi-Core-OS/homebridge/config.json)) - not further tested!!
-May need a reset through the Node-RED frontend to generate a new Frandom MAC adress before it can be connected to Apple Home
-
-Go to the frontend of the VanPi system > Config > Wifi and click on reset Homebridge. That will generate a new random MAC address, a new Pin code and it'll download the latest homebridge config from our server and deploy it. Remember that you need to be connected to the internet for Apple Home to work (and for downloading the config files, obviously)
-
-## **THROUBLESHOOTING**
-
-In case some symbols in the frontend are not displayed correctly (eg. "°C"), download the flows_pekaway.json from the VanPi-Core-OS folder ([here](https://github.com/Pekaway/VAN_PI/blob/main/VanPi-Core-OS/node-red/flows_pekaway.json)).
-On your RPI open ~/.node-red/flows_pekaway.json and manually replace its content with the content from the file you just downloaded from the server. Then restart Node-RED with "sudo systemctl restart nodered.service".
 
 Alternatively, go into the Node-RED backend and replace non-formatted characters by hand:
  - flow Sensor-Dashboard, on the very top there are 4 text nodes displaying the temp sensors

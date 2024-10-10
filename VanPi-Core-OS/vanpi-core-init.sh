@@ -63,7 +63,7 @@ version_greater_equal() {
 # Function to compare OS versions using codename
 compare_os_versions() {
     # Array of Debian codenames in chronological order
-    versions=("buster" "bullseye" "bookworm" "trixie")
+    versions=("buster" "bullseye" "bookworm" "trixie" "forky")
 
     # Find the index of current and minimum versions
     for i in "${!versions[@]}"; do
@@ -254,12 +254,20 @@ sudo cp -r ~/VAN_PI/VanPi-Core-OS/homebridge/config.json /var/lib/homebridge/con
 echo -e "${Cyan}Installing Zigbee2MQTT${NC}"
 sudo mkdir /opt/zigbee2mqtt
 sudo chown -R ${USER}: /opt/zigbee2mqtt
+sudo chown -R 1000:1000 "${HOME}/.npm"
 git clone --depth 1 https://github.com/Koenkk/zigbee2mqtt.git /opt/zigbee2mqtt
 cd /opt/zigbee2mqtt && npm ci
 echo -e "${Cyan}Downloading config files for Zigbee2MQTT${NC}"
 cd ~/pekaway
 sudo cp -r ~/VAN_PI/VanPi-Core-OS/zigbee/configuration.yaml /opt/zigbee2mqtt/data/configuration.yaml
 sudo cp -r ~/VAN_PI/VanPi-Core-OS/zigbee/zigbee2mqtt.service /etc/systemd/system/
+
+# get and move tft files for NSPanel and touchdisplay to the correct destination
+mv ~/VAN_PI/VanPi-Core-OS/data/userdata/NSPanel/VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL.tft
+mv ~/VAN_PI/VanPi-Core-OS/data/userdata/NSPanel/autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be
+sudo rm /boot/*.tft
+sudo chown root:root ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft # cannot preserve ownership in root directory
+sudo mv ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft /boot/PekawayTouch.tft
 
 # clear files
 echo -e "${Cyan}Clearing folders and files...${NC}"
@@ -277,14 +285,6 @@ sudo swapoff -a
 sleep 5
 sudo service dphys-swapfile stop
 sudo systemctl disable dphys-swapfile
-
-# get and move tft files for NSPanel and touchdisplay to the correct destination
-# wget -O ~/pekaway/userdata/NSPanel/VanPI_NSPANEL.tft  ${ServerFiles}data/userdata/NSPanel/VanPI_NSPANEL.tft
-# wget -O ~/pekaway/userdata/NSPanel/autoexec.be ${ServerFiles}data/userdata/NSPanel/autoexec.be
-sudo rm /boot/*.tft
-sudo wget -O ~/PekawayTouch ${ServerFiles}touchdisplay/PekawayTouch.tft
-sudo chown root:root ~/PekawayTouch.tft # cannot preserve ownership in root directory
-sudo mv PekawayTouch.tft /boot/PekawayTouch.tft
 
 # configure /boot/firmware/cmdline.txt
 echo -e "${Cyan}Configuring cmdline.txt...${NC}"

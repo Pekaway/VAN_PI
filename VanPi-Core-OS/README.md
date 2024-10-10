@@ -1,7 +1,13 @@
+## Precompiled Image for Raspberry Pi 4 and Raspberry Pi 5
+
+**Head over to** [links.pekaway.de](https://links.pekaway.de/downloads.html), download the latest precompiled image (it's a headless system, so no desktop environment) and flash it to your SD-card.
+Start up your Raspberry Pi, wait a few minutes for the boot process to finish and you're good to go.
+
 ## Manually Installing the VanPi System
 
 1. **Get a Raspberry Pi 4 or Raspberry Pi 5.**
 2. **Obtain a clean install of Raspberry Pi OS (Debian 12 Bookworm) on a MicroSD card** - ([download here](https://www.raspberrypi.com/software/operating-systems/)).
+   - (Can be a full setup with desktop environment)
    - The script checks if the OS is at least Debian 12 Bookworm, with Linux kernel 6.1+ and Python 3.11+.
 
 3. **Use the Raspberry Pi Imager** ([download here](https://www.raspberrypi.com/software/)), and set the following options:
@@ -32,7 +38,7 @@
 9. **Confirm if any inputs are required** (typically none, everything should run automatically until you're asked to reboot and the end of the script).
 10. **Sit back and relax** while the installation proceeds.
 
-Once the process is complete, the Raspberry Pi will power up in Access Point Mode. Connect to it and proceed from there, or use a wired connection.
+Once the process is complete, the Raspberry Pi will power up in Access Point Mode (only if no wired connection can be established). Connect to it and proceed from there, or use a wired connection.
 
 ### **Setting Up Homebridge**
 

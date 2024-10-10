@@ -269,6 +269,45 @@ sudo rm /boot/*.tft
 sudo chown root:root ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft # cannot preserve ownership in root directory
 sudo mv ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft /boot/PekawayTouch.tft
 
+## create the initial Hotspot.nmconnection file
+echo -e "${Cyan}Creating the initial Hotspot.nmconnection file{NC}"
+# Extracting the serial number from the device and taking the characters from position 9 onward
+SERIAL_NUMBER=$(cat /sys/firmware/devicetree/base/serial-number | cut -c 9-)
+# Combining the base SSID "VanPiControl_" with the extracted serial number
+SSID="VanPiControl_${SERIAL_NUMBER}"
+# Variables for hotspot configuration
+PASSWORD="pekawayfetzt"      # Set your hotspot password
+INTERFACE="wlan0"          # Wireless interface to use (change if necessary)
+UUID=$(uuidgen)            # Generate a UUID for the connection
+echo -e "${Yellow}Initial SSID id ${SSID} with password '${PASSWORD}'${NC}"
+# File path where the .nmconnection file will be saved
+FILE_PATH="/etc/NetworkManager/system-connections/Hotspot.nmconnection"
+# Creating the .nmconnection file with the required hotspot configuration
+sudo cat <<EOF > "$FILE_PATH"
+[connection]
+id=${SSID}
+uuid=${UUID}
+type=wifi
+interface-name=${INTERFACE}
+permissions=
+
+[wifi]
+mode=ap
+ssid=${SSID}
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=${PASSWORD}
+
+[ip4]
+method=shared
+
+[ipv6]
+method=ignore
+EOF
+
+# Set permissions for the .nmconnection file
+sudo chmod 600 "$FILE_PATH"
 # clear files
 echo -e "${Cyan}Clearing folders and files...${NC}"
 sudo rm -rf ~/VAN_PI
@@ -277,7 +316,7 @@ sudo rm -rf ~/VAN_PI
 echo -e "${Cyan}Restarting services...${NC}"
 sudo systemctl daemon-reload
 echo -e "${Cyan}zigbee2mqtt.service is not started/enabled by default!${NC}"
-sudo systemctl restart nginx.service homebridge.service mosquitto.service nodered.service bluetooth
+sudo systemctl restart nginx.service homebridge.service mosquitto.service nodered.service bluetooth NetworkManager
 sudo chmod 0755 ~/pekaway/ds18b20_py/ds18b20.py
 sudo systemctl enable bluetooth
 echo -e "${Cyan}Turning off swapfile!${NC}"

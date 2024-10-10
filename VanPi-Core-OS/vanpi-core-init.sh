@@ -271,8 +271,9 @@ sudo mv ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft /boot/PekawayTouch.
 
 ## create the initial Hotspot.nmconnection file
 echo -e "${Cyan}Creating the initial Hotspot.nmconnection file{NC}"
-# Extracting the serial number from the device and taking the characters from position 9 onward
-SERIAL_NUMBER=$(cat /sys/firmware/devicetree/base/serial-number | cut -c 9-)
+# Extracting the serial number from the device and taking the characters from position 9 to the random MAX value
+MAX=$(shuf -i 12-14 -n 1)
+SERIAL_NUMBER=$(cat /sys/firmware/devicetree/base/serial-number | cut -c 9-$MAX)
 # Combining the base SSID "VanPiControl_" with the extracted serial number
 SSID="VanPiControl_${SERIAL_NUMBER}"
 # Variables for hotspot configuration

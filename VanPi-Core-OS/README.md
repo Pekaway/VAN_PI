@@ -27,9 +27,9 @@ Start up your Raspberry Pi, wait a few minutes for the boot process to finish an
 6. **Wait until it appears on your network, then log in via SSH** using the credentials you set.
 7. **Once logged in, run the following commands:**
     ```bash
-    cd ~/
-    wget https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/vanpi-core-init.sh
-    chmod +x vanpi-core-init.sh
+    cd ~/ &&
+    wget https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/vanpi-core-init.sh &&
+    chmod +x vanpi-core-init.sh &&
     bash vanpi-core-init.sh
     ```
 

@@ -158,6 +158,9 @@ cd ~/pekaway
 # create folder structure:
 cp -r ~/VAN_PI/VanPi-Core-OS/data/* ~/pekaway/
 
+# creating needed files (empty ones)
+touch btbmstype van_name dimmeripaddr MACliontron LFBRosON LFBrosOFF LFBrosPLUS LFBrosMINUS installdate boiler_Relay boilertemp_sensor espshuntmac ruuvitag_0_name ruuvitag_1_name ruuvitag_2_name MACmppt ttgoinfo
+
 # wget -O ~/VAN_PI/VanPi-Core-OS/misc/defaultvalues.json ${ServerFiles}misc/defaultvalues.json
 json_file="${HOME}/VAN_PI/VanPi-Core-OS/misc/defaultvalues.json"
 # Loop through the keys in the JSON file and create files with default values

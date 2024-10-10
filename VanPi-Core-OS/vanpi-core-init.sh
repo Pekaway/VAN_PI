@@ -104,6 +104,9 @@ echo "Continuing..."
 # get latest updates
 # Update package list
 echo -e "${Cyan}updating packages list${NC}"
+# add the Homebridge Repository GPG key:
+curl -sSfL https://repo.homebridge.io/KEY.gpg | sudo gpg --dearmor | sudo tee /usr/share/keyrings/homebridge.gpg  > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/homebridge.gpg] https://repo.homebridge.io stable main" | sudo tee /etc/apt/sources.list.d/homebridge.list > /dev/null
 sudo apt update
 
 # Upgrade all installed packages while keeping existing configuration files
@@ -132,6 +135,8 @@ echo "pekaway" | sudo tee /etc/hostname
 # clone archive from github to get data files
 echo -e "${Cyan}Cloning data from github repository${NC}"
 cd ~
+sudo apt install git-lfs # use git lfs for larger files like .json files etc
+git lfs install
 git clone --filter=blob:none --no-checkout ${GithubRepo}
 cd VAN_PI
 git sparse-checkout set VanPi-Core-OS
@@ -150,7 +155,7 @@ cd ~/pekaway
 # create folder structure:
 cp -r ~/VAN_PI/VanPi-Core-OS/data/* ~/pekaway/
 
-wget -O ~/VAN_PI/VanPi-Core-OS/misc/defaultvalues.json ${ServerFiles}misc/defaultvalues.json
+# wget -O ~/VAN_PI/VanPi-Core-OS/misc/defaultvalues.json ${ServerFiles}misc/defaultvalues.json
 json_file="${HOME}/VAN_PI/VanPi-Core-OS/misc/defaultvalues.json"
 # Loop through the keys in the JSON file and create files with default values
 jq -r 'to_entries | .[] | "\(.key)=\(.value)"' "$json_file" | while IFS='=' read -r filename value; do
@@ -232,14 +237,13 @@ sudo chmod 0666 /var/log/mosquitto/mosquitto.log
 
 # implementing new udev rules and restarting udev service
 echo -e "${Cyan}Implementing udev rules for serial connections{NC}"
-sudo mv ~/VAN_PI/VanPi-Core-OS/misc/98-pekaway-tty-rules /etc/udev/rules.d/98-pekaway-tty.rules;
+sudo mv ~/VAN_PI/VanPi-Core-OS/misc/98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules;
 sudo udevadm control --reload-rules & sudo systemctl restart udev.service
 
 # install Homebridge
 echo -e "${Cyan}Installing and configuring Homebridge for Apple Homekit${NC}"
-sudo chown -R 1000:1000 "/home/pi/.npm"
-sudo npm install -g --unsafe-perm homebridge homebridge-config-ui-x
-sudo hb-service install --user homebridge
+sudo chown -R 1000:1000 "${HOME}/.npm"
+sudo apt install homebridge
 echo -e "${Cyan}Installing Mqttthing for Homebridge${NC}"
 sudo -E -n npm install -g homebridge-mqttthing@latest
 cd ~/pekaway
@@ -275,8 +279,8 @@ sudo service dphys-swapfile stop
 sudo systemctl disable dphys-swapfile
 
 # get and move tft files for NSPanel and touchdisplay to the correct destination
-wget -O ~/pekaway/userdata/NSPanel/VanPI_NSPANEL.tft  ${ServerFiles}data/userdata/NSPanel/VanPI_NSPANEL.tft
-wget -O ~/pekaway/userdata/NSPanel/autoexec.be ${ServerFiles}data/userdata/NSPanel/autoexec.be
+# wget -O ~/pekaway/userdata/NSPanel/VanPI_NSPANEL.tft  ${ServerFiles}data/userdata/NSPanel/VanPI_NSPANEL.tft
+# wget -O ~/pekaway/userdata/NSPanel/autoexec.be ${ServerFiles}data/userdata/NSPanel/autoexec.be
 sudo rm /boot/*.tft
 sudo wget -O ~/PekawayTouch ${ServerFiles}touchdisplay/PekawayTouch.tft
 sudo chown root:root ~/PekawayTouch.tft # cannot preserve ownership in root directory

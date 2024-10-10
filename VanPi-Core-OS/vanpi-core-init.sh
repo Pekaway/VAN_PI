@@ -107,15 +107,18 @@ echo -e "${Cyan}updating packages list${NC}"
 # add the Homebridge Repository GPG key:
 curl -sSfL https://repo.homebridge.io/KEY.gpg | sudo gpg --dearmor | sudo tee /usr/share/keyrings/homebridge.gpg  > /dev/null
 echo "deb [signed-by=/usr/share/keyrings/homebridge.gpg] https://repo.homebridge.io stable main" | sudo tee /etc/apt/sources.list.d/homebridge.list > /dev/null
+# add the log2ram Repository key:
+echo "deb [signed-by=/usr/share/keyrings/azlux-archive-keyring.gpg] http://packages.azlux.fr/debian/ ${OS_CODENAME} main" | sudo tee /etc/apt/sources.list.d/azlux.list
+sudo wget -O /usr/share/keyrings/azlux-archive-keyring.gpg  https://azlux.fr/repo.gpg
 sudo apt update
 
 # Upgrade all installed packages while keeping existing configuration files
 echo -e "${Cyan}upgrading packages${NC}"
 sudo apt upgrade -y -o Dpkg::Options::="--force-confold"
 
-# install git
+# install git and other packages
 echo -e "${Cyan}Installing git${NC}"
-sudo apt install -y git make build-essential jq
+sudo apt install -y git make build-essential jq log2ram
 
 # enable I2C and 1-Wire
 echo -e "${Cyan}Enabling I2C and 1-Wire Bus${NC}"
@@ -195,7 +198,7 @@ echo -e "${Cyan}Please stand by! This may take a while!${NC}"
 echo -e "${Yellow}It may look frozen, but it is not! Please leave it running and wait patiently.${NC}"
 echo -e "${Yellow}Go grab a coffee and relax for a while, I'll take care of the rest :)${NC}"
 npm install
-
+npm update
 # install Node-RED Pekaway VanPi flows
 echo -e "${Cyan}Installing/updating Node-RED Pekaway VanPi flows...${NC}"
 rm ~/.node-red/flows.json
@@ -279,33 +282,15 @@ SSID="VanPiControl_${SERIAL_NUMBER}"
 # Variables for hotspot configuration
 PASSWORD="pekawayfetzt"      # Set your hotspot password
 INTERFACE="wlan0"          # Wireless interface to use (change if necessary)
-UUID=$(uuidgen)            # Generate a UUID for the connection
-echo -e "${Yellow}Initial SSID id ${SSID} with password '${PASSWORD}'${NC}"
-# File path where the .nmconnection file will be saved
-FILE_PATH="/etc/NetworkManager/system-connections/Hotspot.nmconnection"
-# Creating the .nmconnection file with the required hotspot configuration
-sudo cat <<EOF > "$FILE_PATH"
-[connection]
-id=${SSID}
-uuid=${UUID}
-type=wifi
-interface-name=${INTERFACE}
-permissions=
-
-[wifi]
-mode=ap
-ssid=${SSID}
-
-[wifi-security]
-key-mgmt=wpa-psk
-psk=${PASSWORD}
-
-[ip4]
-method=shared
-
-[ipv6]
-method=ignore
-EOF
+#UUID=$(cat /proc/sys/kernel/random/uuid) # Generate a UUID from the kernel
+echo -e "${Yellow}Initial SSID ${SSID} with password '${PASSWORD}'${NC}"
+# Creating the  with the required hotspot configuration
+sudo nmcli con add type wifi ifname wlan0 mode ap con-name Hotspot ssid ${SSID} autoconnect false
+sudo nmcli con modify Hotspot 802-11-wireless.band bg ipv4.method shared ipv4.address 192.168.4.1/24
+sudo nmcli con modify Hotspot ipv6.method disabled
+sudo nmcli con modify Hotspot wifi-sec.key-mgmt wpa-psk
+sudo nmcli con modify Hotspot wifi-sec.psk "pekawayfetzt"
+sudo nmcli con up Hotspot
 
 # Set permissions for the .nmconnection file
 sudo chmod 600 "$FILE_PATH"

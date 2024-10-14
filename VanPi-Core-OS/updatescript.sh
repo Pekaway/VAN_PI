@@ -192,6 +192,7 @@ wget -N --no-use-server-timestamps ${ServerFiles}data/ds18b20_py/ds18b20.py
 wget -N --no-use-server-timestamps ${ServerFiles}misc/boot_config.txt
 wget -N --no-use-server-timestamps ${ServerFiles}misc/98-pekaway-tty.rules
 wget -N --no-use-server-timestamps ${ServerFiles}nginx/pekaway1
+wget -N --no-use-server-timestamps ${ServerFiles}misc/pythonsqlite.db
 
 # get new files here
 #wget ${Server}newFilesForUpdate/supervolt_flybat.py
@@ -238,6 +239,7 @@ sudo mv PekawayTouch.tft /boot/PekawayTouch${TouchdisplayVersion}.tft
 mv -f ds18b20.py ~/pekaway/ds18b20_py/ds18b20.py
 mv -f simplelevel.py ~/pekaway/ads_py/simplelevel.py
 mv -f web2.py ~/pekaway/ads_py/web2.py
+mv -f pythonsqlite.db ~/pekaway/pythonsqlite.db
 sudo mv -f boot_config.txt /boot/firmware/config.txt
 sudo mv -f 98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules
 sudo mv -f pekaway1 /etc/nginx/sites-available/pekaway1

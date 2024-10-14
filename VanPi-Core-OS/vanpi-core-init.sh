@@ -255,7 +255,6 @@ sudo -E -n npm install -g homebridge-mqttthing@latest
 cd ~/pekaway
 sudo cp -r ~/VAN_PI/VanPi-Core-OS/homebridge/config.json /var/lib/homebridge/config.json
 
-
 # install Zigbee2MQTT
 echo -e "${Cyan}Installing Zigbee2MQTT${NC}"
 sudo mkdir /opt/zigbee2mqtt
@@ -269,14 +268,18 @@ sudo cp -r ~/VAN_PI/VanPi-Core-OS/zigbee/configuration.yaml /opt/zigbee2mqtt/dat
 sudo cp -r ~/VAN_PI/VanPi-Core-OS/zigbee/zigbee2mqtt.service /etc/systemd/system/
 
 # get and move tft files for NSPanel and touchdisplay to the correct destination
+echo -e "${Cyan}Downloading .tft files for NSPanel and Pekaway Touchdisplay${NC}"
 mv ~/VAN_PI/VanPi-Core-OS/data/userdata/NSPanel/VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL.tft
 mv ~/VAN_PI/VanPi-Core-OS/data/userdata/NSPanel/autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be
 sudo rm /boot/*.tft
 sudo chown root:root ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft # cannot preserve ownership in root directory
 sudo mv ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft /boot/PekawayTouch.tft
 
+# move the original pythonsqlite.db file to the correct location
+mv ~/VAN_PI/VanPi-Core-OS/misc/pythonsqlite.db ~/pekaway/pythonsqlite.db
+
 ## create the initial Hotspot.nmconnection file
-echo -e "${Cyan}Creating the initial Hotspot.nmconnection file{NC}"
+echo -e "${Cyan}Creating the initial Hotspot.nmconnection file${NC}"
 # Extracting the serial number from the device and taking the characters from position 9 to the random MAX value
 MAX=$(shuf -i 12-14 -n 1)
 SERIAL_NUMBER=$(cat /sys/firmware/devicetree/base/serial-number | cut -c 9-$MAX)
@@ -287,6 +290,7 @@ PASSWORD="pekawayfetzt"      # Set your hotspot password
 INTERFACE="wlan0"          # Wireless interface to use (change if necessary)
 #UUID=$(cat /proc/sys/kernel/random/uuid) # Generate a UUID from the kernel
 echo -e "${Yellow}Initial SSID ${SSID} with password '${PASSWORD}'${NC}"
+echo -e "${Yellow}The SSID '${SSID}' will change on the next boot process! (Only this one time, not on every boot process)'${NC}"
 # Creating the  with the required hotspot configuration
 sudo nmcli con add type wifi ifname wlan0 mode ap con-name Hotspot ssid ${SSID} autoconnect false
 sudo nmcli con modify Hotspot 802-11-wireless.band bg ipv4.method shared ipv4.address 192.168.4.1/24

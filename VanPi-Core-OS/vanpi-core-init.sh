@@ -301,6 +301,10 @@ sudo chmod 600 "$FILE_PATH"
 echo -e "${Cyan}Clearing folders and files...${NC}"
 sudo rm -rf ~/VAN_PI
 
+# make all .sh files executable
+find ~/pekaway -type f -name "*.sh" -exec chmod +x {} \;
+# set 0755 permissions on all python files
+find ~/pekaway -type f -name "*.py" -exec chmod 0755 {} \;
 # restart Services
 echo -e "${Cyan}Restarting services...${NC}"
 sudo systemctl daemon-reload

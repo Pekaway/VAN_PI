@@ -13,7 +13,7 @@
 # define variables
 Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
 ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
-Version='v2.0.2'		### <--- set new version number VanPi OS
+Version='v2.0.3'		### <--- set new version number VanPi OS
 NSPanelVersion='0.0.1'	### <--- set new version number NSPanel
 TouchdisplayVersion='1.0.5'	### <--- set new version number Touchdisplay
 currentVersion=`cat ~/pekaway/version`

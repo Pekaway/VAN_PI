@@ -1,3 +1,15 @@
+# Update 2.0.3 (17. October 2024) - Hotfix
+- fixed function that sets GPIOs to low/high for waterlevels on RPI4
+- fixed function to add Ruuvitags using the MAC-adress, when no RuuviTag was found in auto-mode
+- removed a zigbee device that was left in the zigbee config after testing
+- fixed dropdowns in Boiler Control menu that show levels, relays, temperatures
+- removed function that dims LEDs down stepwise when using digital inputs for "alloff" and "selected alloff" options
+    - dimming down stepwise potentially leads to leaving some LEDs above 0% on RPI4
+    - Happens when using too many requests (etc. dimming all dimmers at once from 100 to 0)
+    - dimmers are shut down to 0% immediately for now
+- removed a connection that reinitialises all variables when pressing the button that updates the temp. names in the Pekaway touchdisplay
+- added 0xA073 to VE.direct (SmartSolar MPPT 150/45 rev3)
+
 # Update 2.0.2 (04 October 2024)
 - inserted functions to set fixed positions for temp sensors
     - see Config > Sensors > Temp Sensor Positions

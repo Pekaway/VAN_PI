@@ -26,19 +26,21 @@ async def main():
     while True:
         # Get MAC addresses from the file
         macs = get_mac_addresses_from_file(file_path)
-        num_macs = len(macs)
+
+        # Initialize data_json with None for each MAC
+        data_json = {mac: None for mac in macs}
 
         # Get data only for defined MACs with a timeout of 20 seconds
         try:
-            datas = await asyncio.wait_for(collect_ruuvitag_data(macs, num_macs), timeout=20)
+            datas = await asyncio.wait_for(collect_ruuvitag_data(macs), timeout=20)
+            
+            # Populate data_json with received data
+            for data in datas:
+                mac_address = data[0]
+                data_json[mac_address] = data[1]
+            
         except asyncio.TimeoutError:
             print("Timeout occurred. Retrying...")
-
-        # Convert collected data to JSON
-        data_json = {}
-        for data in datas:
-            mac_address = data[0]
-            data_json[mac_address] = data[1]
 
         # Print JSON string
         print(json.dumps(data_json, indent=4))
@@ -46,12 +48,13 @@ async def main():
         # Wait for 60 seconds before starting the next request
         await asyncio.sleep(60)
 
-async def collect_ruuvitag_data(macs, num_macs):
+async def collect_ruuvitag_data(macs):
     datas = []
     async for found_data in RuuviTagSensor.get_data_async(macs):
-        # print(f"{found_data[0]}: {found_data[1]}")
         datas.append(found_data)
-        if len(datas) >= num_macs:
+        # Continue collecting data until all MACs have been seen at least once
+        unique_macs = {data[0] for data in datas}
+        if unique_macs == set(macs):
             break
     return datas
 

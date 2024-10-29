@@ -6,11 +6,13 @@
 #########################
 
 import asyncio
-import os
 import json
+import os
 from datetime import datetime
+
 os.environ["RUUVI_BLE_ADAPTER"] = "bleak"
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
+
 
 # Function to read MAC addresses from a JSON file
 def get_mac_addresses_from_file(file_path):

@@ -6,13 +6,12 @@
 #########################
 
 import asyncio
-import json
 import os
+import json
+import signal
 from datetime import datetime
-
 os.environ["RUUVI_BLE_ADAPTER"] = "bleak"
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
-
 
 # Function to read MAC addresses from a JSON file
 def get_mac_addresses_from_file(file_path):
@@ -20,6 +19,13 @@ def get_mac_addresses_from_file(file_path):
         data = json.load(file)
         macs = [entry["mac"] for entry in data]
     return macs
+
+# Graceful shutdown function
+def shutdown(loop):
+    print("Shutting down gracefully...")
+    for task in asyncio.all_tasks(loop):
+        task.cancel()
+    loop.stop()
 
 async def main():
     # Path to the JSON file containing MAC addresses
@@ -61,4 +67,13 @@ async def collect_ruuvitag_data(macs):
     return datas
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main())
+    loop = asyncio.get_event_loop()
+
+    # Register signal handlers for graceful shutdown
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, lambda: shutdown(loop))
+    
+    try:
+        loop.run_until_complete(main())
+    finally:
+        loop.close()

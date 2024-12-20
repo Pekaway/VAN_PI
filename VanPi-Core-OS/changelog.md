@@ -1,3 +1,33 @@
+# Update 2.0.4 (20. Dec. 2024)
+- changed display baudrate to 115200
+- rewrote heater flow
+- rewrote autoterm flow for twinkit support
+- rewrote china heater flow
+- rewrote webasto flow
+- rewrote bluetooth scan functions to use bluetoothctl instead of hcitool
+    - known issue: sometimes names of discovered devices are not provided
+    - duplicates in discovered devices are filtered out
+    - discovered devices MAC adresses are sorted alphabetically
+    - slightly rewrote RuuviBLE.py
+    - slightly rewrote jbdBLE.py
+    - RuuviTags flow has beend adjusted
+- added a function to have a digital input turn selected relays off (but never/not back on)
+- fixed digital inputs not turning on dimmer when set to switch
+- altered ttgo function to show changes in math. sign (+/-) immediately
+- dimmers will now dim up/down from current value to target value when set via API/Touchdisplay/UI instead of simply jumping to the target value (I2C Dimmy only)
+- fixed a problem with restoring userdata
+- set a function that prevents the touchdisplay from initializing data until Node-RED is full loaded up
+- added http endpoints to control two autotherm heaters individually
+- altered function to built UI respectively
+- added functions to use boiler via heater
+- heater hysteresis can now be adjusted in steps of 0.5
+- altered http endpoints for smoother experience with loading data in the Pekaway Connect app
+- altered the update script to make to edit /etc/logrotate.conf, /etc/log2ram.conf and functionGlobalContext keys in .node-red/settings.js
+- altered function to reconnect to remote MQTT broker to every 8 hours
+- added support for Votronic MPPT (2014 or later) via MUART
+- added a function to synchronize server time with client(browser)time
+- added PekawayTouch.tft (v2.0.0) to /boot/
+
 # Update 2.0.3 (17. October 2024) - Hotfix
 - fixed function that sets GPIOs to low/high for waterlevels on RPI4
 - fixed function to add Ruuvitags using the MAC-adress, when no RuuviTag was found in auto-mode

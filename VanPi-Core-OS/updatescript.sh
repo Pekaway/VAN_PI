@@ -22,11 +22,11 @@ currentVersion=`cat ~/pekaway/version`
 # Define the file for logrotate and the desired line value
 LOGROTATE_CONFIG_FILE="/etc/logrotate.conf"
 LOGROTATE_TARGET_KEY="maxsize"
-LOGROTATE_TARGET_VALUE="80M"
+LOGROTATE_TARGET_VALUE="60M"
 # Define the file for log2ram and the desired line value
 LOG2RAM_CONFIG_FILE="/etc/log2ram.conf"
 LOG2RAM_TARGET_KEY="LOG_DISK_SIZE"
-LOG2RAM_TARGET_VALUE="100M"
+LOG2RAM_TARGET_VALUE="120M"
 
 steps='10' ### <--- number of total steps for progessbar
 

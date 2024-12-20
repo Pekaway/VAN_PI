@@ -374,11 +374,11 @@ else
     # Check if the line exists with a different value
     if grep -q "^$LOGROTATE_TARGET_KEY " "$LOGROTATE_CONFIG_FILE"; then
         echo "The line '$LOGROTATE_TARGET_KEY' exists but has a different value. Updating it..."
-        sed -i "s|^$LOGROTATE_TARGET_KEY .*|$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE|" "LOGROTATE_$CONFIG_FILE"
+        sudo sed -i "s|^$LOGROTATE_TARGET_KEY .*|$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE|" "LOGROTATE_$CONFIG_FILE"
     else
         # Add the line if it doesn't exist
         echo "The line '$LOGROTATE_TARGET_KEY' is missing. Adding it..."
-        echo "$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE" >> "$LOGROTATE_CONFIG_FILE"
+        sudo echo "$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE" >> "$LOGROTATE_CONFIG_FILE"
     fi
 fi
 
@@ -397,11 +397,11 @@ else
     # Check if the line exists with a different value
     if grep -q "^$LOG2RAM_TARGET_KEY=" "$LOG2RAM_CONFIG_FILE"; then
         echo "The line '$LOG2RAM_TARGET_KEY' exists but has a different value. Updating it..."
-        sed -i "s|^$LOG2RAM_TARGET_KEY=.*|$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE|" "$LOG2RAM_CONFIG_FILE"
+        sudo sed -i "s|^$LOG2RAM_TARGET_KEY=.*|$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE|" "$LOG2RAM_CONFIG_FILE"
     else
         # Add the line if it doesn't exist
         echo "The line '$LOG2RAM_TARGET_KEY' is missing. Adding it..."
-        echo "$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE" >> "$LOG2RAM_CONFIG_FILE"
+        sudo echo "$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE" >> "$LOG2RAM_CONFIG_FILE"
     fi
 fi
 

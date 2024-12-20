@@ -13,11 +13,22 @@
 # define variables
 Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
 ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
-Version='v2.0.3'		### <--- set new version number VanPi OS
+LfsServerFiles='https://media.githubusercontent.com/media/Pekaway/VAN_PI/main/VanPi-Core-OS/'
+Version='v2.0.4'		### <--- set new version number VanPi OS
 NSPanelVersion='0.0.1'	### <--- set new version number NSPanel
-TouchdisplayVersion='1.0.5'	### <--- set new version number Touchdisplay
+TouchdisplayVersion='2.0.0'	### <--- set new version number Touchdisplay
 currentVersion=`cat ~/pekaway/version`
-steps='9' ### <--- number of total steps for progessbar
+
+# Define the file for logrotate and the desired line value
+LOGROTATE_CONFIG_FILE="/etc/logrotate.conf"
+LOGROTATE_TARGET_KEY="maxsize"
+LOGROTATE_TARGET_VALUE="80M"
+# Define the file for log2ram and the desired line value
+LOG2RAM_CONFIG_FILE="/etc/log2ram.conf"
+LOG2RAM_TARGET_KEY="LOG_DISK_SIZE"
+LOG2RAM_TARGET_VALUE="100M"
+
+steps='10' ### <--- number of total steps for progessbar
 
 # prepare variables to be compared
 VersionToCheck='v2.0.0' # Version that has relevant changes in update script
@@ -348,7 +359,57 @@ pip3 install bottle --break-system-packages
 echo "Done."
 
 sleep 3
-echo "Step 7/${steps}: backing up flows" | sudo tee ${Progress}
+echo "Step 7/${steps}: checking logrotate and log2ram" | sudo tee ${Progress}
+# Check logrotate configuration
+# Check if the file exists
+if [ ! -f "$LOGROTATE_CONFIG_FILE" ]; then
+    echo "The file $LOGROTATE_CONFIG_FILE does not exist. Exiting this step."
+    exit 0
+fi
+
+# Check if the line exists and matches the target value
+if grep -q "^$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE" "$LOGROTATE_CONFIG_FILE"; then
+    echo "The line '$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE' is already set and correct."
+else
+    # Check if the line exists with a different value
+    if grep -q "^$LOGROTATE_TARGET_KEY " "$LOGROTATE_CONFIG_FILE"; then
+        echo "The line '$LOGROTATE_TARGET_KEY' exists but has a different value. Updating it..."
+        sed -i "s|^$LOGROTATE_TARGET_KEY .*|$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE|" "LOGROTATE_$CONFIG_FILE"
+    else
+        # Add the line if it doesn't exist
+        echo "The line '$LOGROTATE_TARGET_KEY' is missing. Adding it..."
+        echo "$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE" >> "$LOGROTATE_CONFIG_FILE"
+    fi
+fi
+
+
+# Check log2ram configuration
+# Check if the file exists
+if [ ! -f "$LOG2RAM_CONFIG_FILE" ]; then
+    echo "The file $LOG2RAM_CONFIG_FILE does not exist. Exiting this step."
+    exit 0
+fi
+
+# Check if the line exists and matches the target value
+if grep -q "^$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE" "$LOG2RAM_CONFIG_FILE"; then
+    echo "The line '$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE' is already set and correct."
+else
+    # Check if the line exists with a different value
+    if grep -q "^$LOG2RAM_TARGET_KEY=" "$LOG2RAM_CONFIG_FILE"; then
+        echo "The line '$LOG2RAM_TARGET_KEY' exists but has a different value. Updating it..."
+        sed -i "s|^$LOG2RAM_TARGET_KEY=.*|$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE|" "$LOG2RAM_CONFIG_FILE"
+    else
+        # Add the line if it doesn't exist
+        echo "The line '$LOG2RAM_TARGET_KEY' is missing. Adding it..."
+        echo "$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE" >> "$LOG2RAM_CONFIG_FILE"
+    fi
+fi
+
+# Restart log2ram
+echo "Restarting log2ram..."
+systemctl restart log2ram && echo "log2ram restarted successfully." || echo "Failed to restart log2ram."
+
+echo "Step 8/${steps}: backing up flows" | sudo tee ${Progress}
 
 # remove downloaded files
 rm -f ~/pekaway/packages.txt && rm -f ~/pekaway/package.json && rm -f ~/pekaway/piplist.txt
@@ -365,16 +426,74 @@ echo ${Version} >| ~/pekaway/version
 # set update = true to show up when opening dashboard
 echo "1" >| ~/pekaway/update
 
+# Define the path to the Node-RED settings.js file
+NR_SETTINGS_FILE="$HOME/.node-red/settings.js"
+
+# Define the desired global context key-value pairs
+declare -A GLOBAL_CONTEXT=(
+    ["zlib"]="require('zlib')"
+    #["os"]="require('os')"
+    # Add more key-value pairs as needed
+)
+
+# Check if the settings.js file exists
+if [ ! -f "$NR_SETTINGS_FILE" ]; then
+    echo "The settings.js file does not exist at $NR_SETTINGS_FILE. Exiting."
+    exit 1
+fi
+
+# Check if functionGlobalContext exists
+if grep -q "functionGlobalContext:" "$NR_SETTINGS_FILE"; then
+    echo "Found functionGlobalContext in settings.js."
+
+    # Loop through desired global context entries
+    for KEY in "${!GLOBAL_CONTEXT[@]}"; do
+        VALUE=${GLOBAL_CONTEXT[$KEY]}
+
+        # Check if the key already exists and is uncommented
+        if grep -q "^    $KEY:$VALUE" "$NR_SETTINGS_FILE"; then
+            echo "$KEY is already included in functionGlobalContext and uncommented."
+        # Check if the key exists but is commented out
+        elif grep -q "^ *// *$KEY:$VALUE" "$NR_SETTINGS_FILE"; then
+            echo "$KEY is commented out. Uncommenting it..."
+            sed -i "s|^ *// *$KEY:$VALUE|    $KEY:$VALUE|" "$NR_SETTINGS_FILE"
+            echo "$KEY uncommented."
+        else
+            echo "$KEY is missing. Adding it to functionGlobalContext..."
+
+            # Insert the key-value pair into functionGlobalContext
+            sed -i "/functionGlobalContext:/,/}/ s|}|    $KEY:$VALUE,\n}|" "$NR_SETTINGS_FILE"
+
+            echo "$KEY added to functionGlobalContext."
+        fi
+    done
+else
+    echo "functionGlobalContext not found. Adding it with the desired entries..."
+
+    # Build the functionGlobalContext block dynamically
+    CONTEXT_BLOCK="functionGlobalContext: {\n"
+    for KEY in "${!GLOBAL_CONTEXT[@]}"; do
+        CONTEXT_BLOCK+="    $KEY:${GLOBAL_CONTEXT[$KEY]},\n"
+    done
+    CONTEXT_BLOCK+="},"
+
+    # Add the block at the end of the file
+    echo -e "\n$CONTEXT_BLOCK" >> "$NR_SETTINGS_FILE"
+
+    echo "functionGlobalContext added with the desired entries."
+fi
+
+
 # download new flows and replace the old file
 sleep 3
-echo "Step 8/${steps}: getting new flows" | sudo tee ${Progress}
+echo "Step 9/${steps}: getting new flows" | sudo tee ${Progress}
 echo "replacing local flows.json file with new one from the server"
-wget --no-use-server-timestamps -P ~/pekaway/pkwUpdate/ ${ServerFiles}node-red/flows_pekaway.json
+wget --no-use-server-timestamps -P ~/pekaway/pkwUpdate/ ${LfsServerFiles}node-red/flows_pekaway.json
 cp ~/pekaway/pkwUpdate/flows_pekaway.json ~/.node-red/flows_pekaway.json
 echo "update script finished! You can find the logfile at ${LOG_FILE}."
 rm ~/pekaway/pkwUpdate/flows_pekaway.json
 sleep 3
-echo "Step 9/${steps}: restarting Node-RED..." | sudo tee ${Progress}
+echo "Step 10/${steps}: restarting Node-RED..." | sudo tee ${Progress}
 sleep 5
 sudo truncate -s 0 ${Progress}
 

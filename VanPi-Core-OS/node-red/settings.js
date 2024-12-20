@@ -484,6 +484,7 @@ module.exports = {
      */
     functionGlobalContext: {
         // os:require('os'),
+	zlib:require('zlib'),
     },
 
     /** The maximum number of messages nodes will buffer internally as part of their

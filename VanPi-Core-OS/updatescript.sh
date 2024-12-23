@@ -244,8 +244,7 @@ touch ~/pekaway/combined_ruuvi_chart
 sudo chown root:root PekawayTouch.tft # cannot preserve ownership in root directory
 sudo rm /boot/*.tft
 sudo rm /boot/firmware/*.tft
-sudo mv PekawayTouch.tft /boot/PekawayTouch${TouchdisplayVersion}.tft
-sudo cp /boot/PekawayTouch${TouchdisplayVersion}.tft /boot/firmware/
+sudo mv PekawayTouch.tft /boot/firmware/PekawayTouch${TouchdisplayVersion}.tft
 
 
 # move new files here

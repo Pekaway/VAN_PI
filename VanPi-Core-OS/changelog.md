@@ -1,3 +1,18 @@
+# Update 2.0.5 (10. Jan. 2025)
+- fixed 2nd autoterm temp sensor for temp mode
+- fixed userdata setting old version number when restoring userdata
+- fixed Victron Shunt IP65 Rev.2 PID
+- fixed Ruuvitags not being shown properly in touchdisplay homescreen
+- fixed Apple Home dimmers not working
+- fixed Votronic mppt not being shown in monitor
+- fixed problem in routing Webasto heater to the correct USB port
+- fixed heater not being shown when set as "relay connected heater" only
+- set gps_updated variable for smartphone app to now show 01. Jan 1970 when no valid GPS data has been received
+- updated NR to v4.0.8 (not when using updatescript!)
+- fixed touchdisplay autoterm power mode always turning to 0 when decreasing power level
+- set shelly gen.1 switches mqtt outputs to on/off instead of true/false, according to Shelly documentation
+- rewrote calculations for voltage and ampere in web2.py for (older) wired shunt
+
 # Update 2.0.4 (20. Dec. 2024)
 - changed display baudrate to 115200
 - rewrote heater flow

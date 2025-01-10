@@ -1,16 +1,17 @@
 # original script to read shunt (RJ11) data and water levels on Pekaway VANPI OS v2.x.x (Debian Bookworm)
 
-from bottle import route, run
-from threading import Thread
-import time
 import json
-import sqlite3
 import os
 import random
-import busio
-import board
+import sqlite3
+import time
+from threading import Thread
+
 import adafruit_ads1x15.ads1115 as ADS
+import board
+import busio
 from adafruit_ads1x15.analog_in import AnalogIn
+from bottle import route, run
 
 # Initialize variables
 a = 0  # global variable 
@@ -35,10 +36,11 @@ checknumber=0
 # Initialize I2C bus and ADC instances
 i2c = busio.I2C(board.SCL, board.SDA)
 adc = ADS.ADS1115(i2c, address=0x4a)
+adc1 = ADS.ADS1115(i2c, address=0x4a)
 adc2 = ADS.ADS1115(i2c, address=0x48)
 
 # Gain settings for ADS1115 (these are approximate, check your exact requirements)
-gains = (2 / 3, 1, 2, 4, 8, 16)
+gains = [2/3, 1, 2, 4, 8, 16]
 
 # Check for existing database and load initial data
 if os.path.isfile(r"/home/pi/pekaway/pythonsqlite.db"):
@@ -175,28 +177,31 @@ def thread2(threadname):
         print("error")
     while True:
     
-        chan = AnalogIn(adc, ADS.P0)
-        #print(f"Channel 0: {chan.value} {chan.voltage}")
+        chan = AnalogIn(adc, ADS.P0, ADS.P1)
+        print(f"Channel 0: {chan.value} {chan.voltage}")
         micros = int(round(time.time() * 1000000))
-        adc.gain = 16#gains[5]
-        Io = AnalogIn(adc, ADS.P0, ADS.P1).value
-        adc.gain = 1#gains[0]
-        Vo = AnalogIn(adc, ADS.P3).value
-        
-        #adc.gain = gains[5]  # Set the gain for the ADC
-        I = (0.256 * Io / 32767) * (factorI / 0.075)
+        #adc1.gain = 2#gains[0]
+        #adc.gain = 16#gains[5]
+        Io = AnalogIn(adc, ADS.P0, ADS.P1)
+        #print(f"Io: {Io}")
+        #print(f"gain Vo: {adc.gain}")
+        print(f"factorI: {factorI}")
+        adc.gain = 16  # Set the gain for the ADC
+        I = (0.256*Io.value/32768)*(int(factorI)/0.075)
         amps = I
         if(amps > 0):
               amps = 0 - amps
         else:
               amps = amps * -1
         print(f"ampere: {amps}")
-
-        V = (2.048 * Vo / 32767) * 11.9
-        V += 0.6
-        volts = V * -1
+        adc1.gain = 2  # Set the gain for the ADC
+        Vo = AnalogIn(adc1, ADS.P2, ADS.P3)
+        print(f"Channel 3: {Vo.value} {Vo.voltage}")
+        V = ((2.048*Vo.value/32768)*11.9)+0.6
+        #V += 0.6
+        volts = V*-1
         print(f"Volt V: {V}")
-        watthours = watthours + volts*amps*timeDiff/(1000000*60*60) #W=V*I*t 
+        watthours = watthours + V*amps*timeDiff/(1000000*60*60) #W=V*I*t 
         #watthours += V * amps * timeDiff / (1000000 * 60 * 60)  # W=V*I*t
 
         if watthours > MaxWatthours:
@@ -213,7 +218,7 @@ def thread2(threadname):
             print("ads THREAD running")
             checknumber = random.randint(1, 1000000)
 
-        time.sleep(0.1)
+        time.sleep(0.5)
         count += 1
 
         if len(VArr) > 10:

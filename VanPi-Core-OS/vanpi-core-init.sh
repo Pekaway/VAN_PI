@@ -235,12 +235,31 @@ sudo sed -i 's/default_server//g' /etc/nginx/sites-available/default
 sudo systemctl reload nginx
 sudo systemctl enable nginx
 
+
+MOSQUITTO_CONFIG_FILE="/etc/mosquitto/mosquitto.conf"
+MOSQUITTO_KEYWORD="allow_anonymous"
+
 # install Mosquitto MQTT Server (probably already installed from packages.txt)
 echo -e "${Cyan}Installing Mosquitto MQTT broker${NC}"
 sudo apt install mosquitto mosquitto-clients -y
 sudo mkdir -p /var/log/mosquitto
 sudo touch /var/log/mosquitto/mosquitto.log
 sudo chmod 0666 /var/log/mosquitto/mosquitto.log
+
+# Check if the file already contains the allow_anonymous setting
+if grep -q "^$MOSQUITTO_KEYWORD" "$MOSQUITTO_CONFIG_FILE"; then
+    # Update the line if it's not set to true
+    if ! grep -q "^$MOSQUITTO_KEYWORD true" "$MOSQUITTO_CONFIG_FILE"; then
+        sed -i "s/^$MOSQUITTO_KEYWORD .*/$MOSQUITTO_KEYWORD true/" "$MOSQUITTO_CONFIG_FILE"
+        echo "Updated: $MOSQUITTO_KEYWORD set to true in $MOSQUITTO_CONFIG_FILE"
+    else
+        echo "No changes needed: $MOSQUITTO_KEYWORD is already set to true in $MOSQUITTO_CONFIG_FILE"
+    fi
+else
+    # Add the setting to the configuration file
+    echo "$MOSQUITTO_KEYWORD true" >> "$MOSQUITTO_CONFIG_FILE"
+    echo "Added: $MOSQUITTO_KEYWORD set to true in $MOSQUITTO_CONFIG_FILE"
+fi
 
 # implementing new udev rules and restarting udev service
 echo -e "${Cyan}Implementing udev rules for serial connections{NC}"

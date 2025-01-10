@@ -14,9 +14,9 @@
 Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
 ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
 LfsServerFiles='https://media.githubusercontent.com/media/Pekaway/VAN_PI/main/VanPi-Core-OS/'
-Version='v2.0.4'		### <--- set new version number VanPi OS
+Version='v2.0.5'		### <--- set new version number VanPi OS
 NSPanelVersion='0.0.1'	### <--- set new version number NSPanel
-TouchdisplayVersion='2.0.0'	### <--- set new version number Touchdisplay
+TouchdisplayVersion='2.0.1'	### <--- set new version number Touchdisplay
 currentVersion=`cat ~/pekaway/version`
 
 # Define the file for logrotate and the desired line value
@@ -26,9 +26,7 @@ LOGROTATE_TARGET_VALUE="60M"
 # Define the file for log2ram and the desired line value
 LOG2RAM_CONFIG_FILE="/etc/log2ram.conf"
 LOG2RAM_TARGET_KEY="LOG_DISK_SIZE"
-LOG2RAM_TARGET_VALUE="120M"
-
-steps='10' ### <--- number of total steps for progessbar
+LOG2RAM_TARGET_VALUE="256M"
 
 # prepare variables to be compared
 VersionToCheck='v2.0.0' # Version that has relevant changes in update script
@@ -40,8 +38,21 @@ Progress=/var/log/pekaway-update_progress.log
 sudo truncate -s 0 ${Progress}
 sudo chmod 0666 ${Progress}
 echo "PID="$$ | sudo tee ${Progress} # get the PID
+# Initialize current step
+currentStep=1
+# Dynamically count total steps, subtracting 2 for non-literal steps
+steps=$(grep -o 'show_progress' "$0" | wc -l)
+steps=$((steps - 3))
+
+# Function to display progress
+show_progress() {
+    echo "Step $currentStep/$steps: $1" | sudo tee ${Progress}
+    ((currentStep++))
+    sleep 1
+}
+
 sleep 7
-echo "Step 1/${steps}: comparing versions" | sudo tee ${Progress}
+show_progress "comparing versions"
 
 # create logfile and make it writable
 LOG_FILE=/var/log/pekaway-update_$(date +"%Y_%m_%d-%H_%M").log
@@ -52,21 +63,28 @@ exec 3<&1
 coproc mytee { tee ${LOG_FILE} >&3;  }
 exec >&${mytee[1]} 2>&1
 
-# compare current and new version numbers
-VersionSubstring=${VersionToCheck#*v}
+# Remove the 'v' prefix and split into components
+VersionSubstring=${Version#*v}
 currentVersionSubstring=${currentVersion#*v}
-IFS='.' read -ra currentVersion_array <<< "$currentVersionSubstring"
-IFS='.' read -ra version_array <<< "$VersionSubstring"
 
-currentVersion1=${currentVersion_array[0]}
-currentVersion2=${currentVersion_array[1]}
-currentVersion3=${currentVersion_array[2]}
+IFS='.' read -ra version_array <<< "$VersionSubstring"
+IFS='.' read -ra currentVersion_array <<< "$currentVersionSubstring"
+
+# Extract components as integers
 newVersion1=${version_array[0]}
 newVersion2=${version_array[1]}
 newVersion3=${version_array[2]}
 
-echo "This script needs to be run as a sudo user. Press CTRL+C to abort at any time."
+currentVersion1=${currentVersion_array[0]}
+currentVersion2=${currentVersion_array[1]}
+currentVersion3=${currentVersion_array[2]}
+
+echo "---------------------------------------------------------------------------------------------------"
+echo "#-#-#-#-# This script needs to be run as a sudo user. Press CTRL+C to abort at any time. #-#-#-#-# "
+echo "              (Not with sudo command, but the user needs permissions to use sudo)"
+echo "---------------------------------------------------------------------------------------------------"
 echo -e "logfile will be at ${LOG_FILE}"
+echo "---------------------------------------------------------------------------------------------------"
 
 #####################################################
 # Compare OS version and kernel version
@@ -132,23 +150,23 @@ echo "Continuing..."
 #####################################################
 
 
-if [[ $currentVersion1 -lt $newVersion1 ]]; then
-  echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
-
-elif [[ $currentVersion1 -eq $newVersion1 ]] && [[ $currentVersion2 -lt $newVersion2 ]]; then
-  echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
-  needUpdate='true'
-elif [[ $currentVersion1 -eq $newVersion1 ]] && [[ $currentVersion2 -eq $newVersion2 ]] && [[ $currentVersion3 -lt $newVersion3 ]]; then
-  echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
-  needUpdate='true'
-elif [[ $currentVersion1 -eq $newVersion1 ]] && [[ $currentVersion2 -eq $newVersion2 ]] && [[ $currentVersion3 -eq $newVersion3 ]]; then
- echo "currentVersion ($currentVersion) is the same as newVersion ($Version)"
-  needUpdate='false'
+# Compare versions numerically
+if (( currentVersion1 < newVersion1 )); then
+    echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
+    needUpdate='true'
+elif (( currentVersion1 == newVersion1 && currentVersion2 < newVersion2 )); then
+    echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
+    needUpdate='true'
+elif (( currentVersion1 == newVersion1 && currentVersion2 == newVersion2 && currentVersion3 < newVersion3 )); then
+    echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
+    needUpdate='true'
+elif (( currentVersion1 == newVersion1 && currentVersion2 == newVersion2 && currentVersion3 == newVersion3 )); then
+    echo "currentVersion ($currentVersion) is the same as newVersion ($Version)"
+    needUpdate='false'
 else
-  echo "currentVersion ($currentVersion) is newer than newVersion ($Version)"
-  needUpdate='false'
+    echo "currentVersion ($currentVersion) is newer than newVersion ($Version)"
+    needUpdate='false'
 fi
-
 
 # get confirmation to continue on manual update
 if [[ "$1" == "node-red-auto-update" ]] || [[ "$needUpdate" == 'true' ]]; then
@@ -171,7 +189,7 @@ else
 	done
 fi
 sleep 3
-echo  "Step 2/${steps}: getting new files" | sudo tee ${Progress}
+show_progress "getting new files"
 
 # remove packages.txt and package.json if they already exist
 cd ~/pekaway
@@ -186,28 +204,68 @@ rm -f /ads_py/web2.py
 rm -f /ds18b20_py/ds18b20.py
 
 sudo rm -f /boot/*.tft # delete old .tft for touchdisplay if it exists
+sudo rm -f /boot/firmware/*.tft # delete old .tft for touchdisplay if it exists
 
 #delete files to be replaced here (e.g. updates in scripts)
 #rm -f ~/pekaway/ble_py/supervolt_flybat.py
 
-# download new files packages.txt and package.json
-echo "downloading new files"
-wget -N --no-use-server-timestamps ${ServerFiles}packages.txt
-wget -N --no-use-server-timestamps ${ServerFiles}node-red/package.json
-wget -N --no-use-server-timestamps ${ServerFiles}piplist.txt
-wget -N --no-use-server-timestamps ${ServerFiles}data/userdata/NSPanel/VanPI_NSPANEL.tft
-wget -N --no-use-server-timestamps ${ServerFiles}data/userdata/NSPanel/autoexec.be
-wget -N --no-use-server-timestamps ${ServerFiles}data/ads_py/simplelevel.py
-wget -N --no-use-server-timestamps ${ServerFiles}data/ads_py/web2.py
-wget -N --no-use-server-timestamps ${ServerFiles}data/ds18b20_py/ds18b20.py
-wget -N --no-use-server-timestamps ${ServerFiles}misc/boot_config.txt
-wget -N --no-use-server-timestamps ${ServerFiles}misc/98-pekaway-tty.rules
-wget -N --no-use-server-timestamps ${ServerFiles}nginx/pekaway1
-wget -N --no-use-server-timestamps ${ServerFiles}misc/pythonsqlite.db
+# Switch to reliable DNS servers (Google DNS and Cloudflare DNS):
+echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf
 
-# get new files here
-#wget ${Server}newFilesForUpdate/supervolt_flybat.py
-wget -N --no-use-server-timestamps ${ServerFiles}touchdisplay/PekawayTouch.tft
+# Array to track failed downloads
+failed_downloads=()
+
+# Function for retry logic
+wget_retry() {
+    local url=$1
+    local max_retries=5
+    local count=0
+    until wget -N --no-use-server-timestamps "$url"; do
+        count=$((count + 1))
+        if [ $count -ge $max_retries ]; then
+            echo "Failed to download $url after $max_retries attempts."
+            failed_downloads+=("$url") # Log the failed URL
+            return 1
+        fi
+        echo "Retrying download: $url ($count/$max_retries)..."
+        sleep 3
+    done
+}
+
+echo "Pre-fetching DNS..."
+ping -c 1 $ServerFiles > /dev/null 2>&1
+ping -c 1 $LfsServerFiles > /dev/null 2>&1
+sleep 1
+
+# Download files with retries
+echo "Downloading new files..."
+wget_retry "${ServerFiles}packages.txt"
+sleep 1
+wget_retry "${ServerFiles}node-red/package.json"
+sleep 1
+wget_retry "${ServerFiles}piplist.txt"
+sleep 1
+wget_retry "${ServerFiles}data/userdata/NSPanel/VanPI_NSPANEL.tft"
+sleep 1
+wget_retry "${ServerFiles}data/userdata/NSPanel/autoexec.be"
+sleep 1
+wget_retry "${ServerFiles}data/ads_py/simplelevel.py"
+sleep 1
+wget_retry "${ServerFiles}data/ads_py/web2.py"
+sleep 1
+wget_retry "${ServerFiles}data/ds18b20_py/ds18b20.py"
+sleep 1
+wget_retry "${ServerFiles}misc/boot_config.txt"
+sleep 1
+wget_retry "${ServerFiles}misc/98-pekaway-tty.rules"
+sleep 1
+wget_retry "${ServerFiles}nginx/pekaway1"
+sleep 1
+wget_retry "${ServerFiles}misc/pythonsqlite.db"
+sleep 1
+wget_retry "${ServerFiles}touchdisplay/PekawayTouch.tft"
+sleep 1
 
 # create files for mcp inputs if the don't exist
 # add json into files if they don't exist
@@ -252,6 +310,7 @@ mv -f ds18b20.py ~/pekaway/ds18b20_py/ds18b20.py
 mv -f simplelevel.py ~/pekaway/ads_py/simplelevel.py
 mv -f web2.py ~/pekaway/ads_py/web2.py
 mv -f pythonsqlite.db ~/pekaway/pythonsqlite.db
+sudo chown root:root boot_config.txt
 sudo mv -f boot_config.txt /boot/firmware/config.txt
 sudo mv -f 98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules
 sudo mv -f pekaway1 /etc/nginx/sites-available/pekaway1
@@ -265,7 +324,7 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 sudo systemctl restart nginx
 sleep 1
 
-echo "Step 3/${steps}: installing packages" | sudo tee ${Progress}
+show_progress "installing packages"
 # copy NSPanel .tft file to ~/pekaway/userdata/NSPanel to show up in NR-Dashboard
 mkdir -p ~/pekaway/userdata/NSPanel
 cp -f VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL${NSPanelVersion}.tft
@@ -295,7 +354,7 @@ cd ~/.node-red
 # compare older package.json with new one and ask for merging
 echo "comparing original package.json with the new one:"
 sleep 3
-echo "Step 4/${steps}: checking package.json" | sudo tee ${Progress}
+show_progress "checking package.json"
 
 extramodules=$(diff <(jq --sort-keys .dependencies ~/.node-red/package.json) <(jq --sort-keys .dependencies ~/pekaway/nrbackups/package-backup.json) | grep '>')
 
@@ -342,7 +401,7 @@ fi
 
 #install npm modules from package.json
 sleep 3
-echo "Step 5/${steps}: executing npm install" | sudo tee ${Progress}
+show_progress "executing npm install"
 echo "installing npm modules, please stand by..."
 npm install
 echo "done"
@@ -350,7 +409,7 @@ echo "done"
 cd ~/pekaway
 # Install/update python modules locally (user pi) and globally (root)
 sleep 3
-echo "Step 6/${steps}: checking python modules" | sudo tee ${Progress}
+show_progress "checking python modules"
 echo "Installing Python modules with --break-system-packages, please stand by..."
 sudo -H pip3 install --upgrade pip --break-system-packages
 sudo pip3 install -r ~/pekaway/piplist.txt --break-system-packages
@@ -360,7 +419,7 @@ pip3 install bottle --break-system-packages
 echo "Done."
 
 sleep 3
-echo "Step 7/${steps}: checking logrotate and log2ram" | sudo tee ${Progress}
+show_progress "checking logrotate/log2ram"
 # Check logrotate configuration
 # Check if the file exists
 if [ ! -f "$LOGROTATE_CONFIG_FILE" ]; then
@@ -408,9 +467,9 @@ fi
 
 # Restart log2ram
 echo "Restarting log2ram..."
-systemctl restart log2ram && echo "log2ram restarted successfully." || echo "Failed to restart log2ram."
+#sudo systemctl restart log2ram && echo "log2ram restarted successfully." || echo "Failed to restart log2ram."
 
-echo "Step 8/${steps}: backing up flows" | sudo tee ${Progress}
+show_progress "backing up flows"
 
 # remove downloaded files
 rm -f ~/pekaway/packages.txt && rm -f ~/pekaway/package.json && rm -f ~/pekaway/piplist.txt
@@ -419,13 +478,6 @@ rm -f ~/pekaway/packages.txt && rm -f ~/pekaway/package.json && rm -f ~/pekaway/
 echo "backing up original Node-RED flows"
 cd ~/pekaway/nrbackups
 cp ~/.node-red/flows_pekaway.json "flows_pekaway_$(date +%d-%m-%Y_%I:%M:%S%p).json"
-
-echo "replacing version number of VanPi OS"
-# replace version number
-echo ${Version} >| ~/pekaway/version
-
-# set update = true to show up when opening dashboard
-echo "1" >| ~/pekaway/update
 
 # Define the path to the Node-RED settings.js file
 NR_SETTINGS_FILE="$HOME/.node-red/settings.js"
@@ -485,43 +537,83 @@ else
 fi
 
 
-# download new flows and replace the old file
+# Download new flows and replace the old file
 sleep 3
-echo "Step 9/${steps}: getting new flows" | sudo tee ${Progress}
-echo "replacing local flows.json file with new one from the server"
-wget --no-use-server-timestamps -P ~/pekaway/pkwUpdate/ ${LfsServerFiles}node-red/flows_pekaway.json
-cp ~/pekaway/pkwUpdate/flows_pekaway.json ~/.node-red/flows_pekaway.json
-echo "update script finished! You can find the logfile at ${LOG_FILE}."
+show_progress "getting new flows"
+echo "Replacing local flows.json file with the new one from the server"
+cd ~/pekaway/pkwUpdate/
+wget_retry "${LfsServerFiles}node-red/flows_pekaway.json"
+
+# Check for failures
+flows_success=true
+if [ ! -f "flows_pekaway.json" ]; then
+    echo "The file flows_pekaway.json failed to download."
+    failed_downloads+=("flows_pekaway.json")
+    flows_success=false
+fi
+
+if [ ${#failed_downloads[@]} -gt 0 ]; then
+    echo "The following files failed to download:"
+    for file in "${failed_downloads[@]}"; do
+        echo "  - $file"
+    done
+fi
+
+# Decision based on flows_pekaway.json status
+if [ "$flows_success" = true ]; then
+    # Proceed with updating the flows file
+    cp ~/pekaway/pkwUpdate/flows_pekaway.json ~/.node-red/flows_pekaway.json
+    echo "Flows file replaced successfully."
+else
+    echo "Critical: flows_pekaway.json failed to download. Please check the logfile for details."
+    echo "Aborting Node-RED restart and script execution."
+    echo "Logfile: ${LOG_FILE}"
+    show_progress "Error, see logfile"
+    sleep 3
+    exit 1
+fi
+
+# Clean up and proceed with the rest of the script
 rm ~/pekaway/pkwUpdate/flows_pekaway.json
 sleep 3
-echo "Step 10/${steps}: restarting Node-RED..." | sudo tee ${Progress}
+echo "Replacing version number of VanPi OS"
+# Replace version number
+echo ${Version} >| ~/pekaway/version
+# Set update = true to show up when opening dashboard
+echo "1" >| ~/pekaway/update
+show_progress "restarting Node-RED..."
 sleep 5
 sudo truncate -s 0 ${Progress}
 
-# Get confirmation to continue on manual update
-if [[ "$1" == "node-red-auto-update" ]]; then
-	echo -e "Not asking for confirmation, rebooting automatically."
-	sleep 3
-	sudo reboot
-else
-	while true; do
-		read -r -p "Do you want to reboot now? [y/n] " input
-
-		case $input in
-			[yY][eE][sS]|[yY])
-				sudo reboot
-				break
-				;;
-			[nN][oO]|[nN])
-				echo "Reboot cancelled. Please remember to reboot for the VanPi system to work properly!"
-				exit
-				;;
-			*)
-				echo "Invalid input... please type 'y' (yes) or 'n' (no)"
-				;;
-		esac
-	done
+# Inform the user about non-critical failed downloads
+if [ ${#failed_downloads[@]} -gt 0 ]; then
+    echo "Some non-critical files failed to download. Please check the logfile for details."
+    echo "Logfile: ${LOG_FILE}"
 fi
 
-# when no reboot, only restart nodered
+# Reboot or inform the user
+if [[ "$1" == "node-red-auto-update" ]]; then
+    echo -e "Not asking for confirmation, rebooting automatically."
+    sleep 3
+    sudo reboot
+else
+    while true; do
+        read -r -p "Do you want to reboot now? [y/n] " input
+        case $input in
+            [yY][eE][sS]|[yY])
+                sudo reboot
+                break
+                ;;
+            [nN][oO]|[nN])
+                echo "Reboot cancelled. Please remember to reboot for the VanPi system to work properly!"
+                exit
+                ;;
+            *)
+                echo "Invalid input... please type 'y' (yes) or 'n' (no)"
+                ;;
+        esac
+    done
+fi
+
+# If no reboot, restart Node-RED
 sudo systemctl restart nodered.service

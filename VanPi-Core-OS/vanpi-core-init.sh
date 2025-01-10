@@ -28,6 +28,7 @@ startdate=`date`
 # define server address
 Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
 ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
+LfsServerFiles='https://media.githubusercontent.com/media/Pekaway/VAN_PI/main/VanPi-Core-OS/'
 GithubRepo='https://github.com/Pekaway/VAN_PI.git'
 
 # define color variables

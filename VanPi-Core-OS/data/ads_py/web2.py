@@ -218,7 +218,7 @@ def thread2(threadname):
             print("ads THREAD running")
             checknumber = random.randint(1, 1000000)
 
-        time.sleep(0.5)
+        time.sleep(0.2)
         count += 1
 
         if len(VArr) > 10:

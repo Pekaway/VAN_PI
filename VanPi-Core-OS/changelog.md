@@ -1,4 +1,4 @@
-# Update 2.0.5 (10. Jan. 2025)
+# Update 2.0.5 (13. Jan. 2025)
 - fixed 2nd autoterm temp sensor for temp mode
 - fixed userdata setting old version number when restoring userdata
 - fixed Victron Shunt IP65 Rev.2 PID
@@ -7,6 +7,9 @@
 - fixed Votronic mppt not being shown in monitor
 - fixed problem in routing Webasto heater to the correct USB port
 - fixed heater not being shown when set as "relay connected heater" only
+- fixed the standard name for "Relay 5" (was accidentally set to "Relay 4", only the name displayed)
+- fixed errors when some heater values are not returning strings from API, which resulted in the app heater widget not being displayed
+- fixed a minor error when sending the stop command to Autoterm 2
 - set gps_updated variable for smartphone app to now show 01. Jan 1970 when no valid GPS data has been received
 - updated NR to v4.0.8 (not when using updatescript!)
 - fixed touchdisplay autoterm power mode always turning to 0 when decreasing power level
@@ -31,7 +34,7 @@
 - altered ttgo function to show changes in math. sign (+/-) immediately
 - dimmers will now dim up/down from current value to target value when set via API/Touchdisplay/UI instead of simply jumping to the target value (I2C Dimmy only)
 - fixed a problem with restoring userdata
-- set a function that prevents the touchdisplay from initializing data until Node-RED is full loaded up
+- set a function that prevents the touchdisplay from initializing data until Node-RED is fully loaded up
 - added http endpoints to control two autotherm heaters individually
 - altered function to built UI respectively
 - added functions to use boiler via heater

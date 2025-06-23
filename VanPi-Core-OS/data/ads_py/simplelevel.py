@@ -14,7 +14,9 @@ def main(sleep_time):
 
     # Create an ADS1115 ADC (16-bit) instance.
     ads = ADS.ADS1115(i2c)
-
+    #sleep for 3s on script  start
+    #(ads will output max value on start)
+    time.sleep(3)
     # Main loop.
     while True:
         # Read all the ADC channel values and store them in a list.

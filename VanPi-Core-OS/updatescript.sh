@@ -202,6 +202,7 @@ rm -f autoexec.be
 rm -f /ads_py/simplelevel.py
 rm -f /ads_py/web2.py
 rm -f /ds18b20_py/ds18b20.py
+mkdir -p ~/pekaway/bmi270_project
 rm -f /bmi270_project/bmi270_demo
 
 sudo rm -f /boot/*.tft # delete old .tft for touchdisplay if it exists
@@ -568,7 +569,7 @@ jq '
 $tabs + $nodes + $groups + $ui_tabs
 ' ~/.node-red/flows_pekaway.json > ~/.node-red/extracted_user_flows.json
 
-cp flows_pekaway.json flows_pekaway.json.bkp
+cp ~/.node-red/flows_pekaway.json ~/.node-red/flows_pekaway.json.bkp
 
 # Download new flows and replace the old file
 sleep 3
@@ -608,9 +609,9 @@ fi
 
 # Merge flows_pekaway.json with extracted_user_flows.json and save to merged_flows.json
 echo "Merging flows_pekaway.json and extracted_user_flows.json, saving as merged_flows.json"
-jq -s '[.[0][] , .[1][]]' flows_pekaway.json extracted_user_flows.json > merged_flows.json
+jq -s '[.[0][] , .[1][]]' ~/.node-red/flows_pekaway.json ~/.node-red/extracted_user_flows.json > ~/.node-red/merged_flows.json
 # remove orignal flows file and replace with merged_flows.json
-rm flows_pekaway.json && mv merged_flows.json flows_pekaway.json
+rm ~/.node-red/flows_pekaway.json && rm ~/.node-red/extracted_user_flows.json && mv ~/.node-red/merged_flows.json ~/.node-red/flows_pekaway.json
 
 # Clean up and proceed with the rest of the script
 rm ~/pekaway/pkwUpdate/flows_pekaway.json
@@ -645,7 +646,7 @@ else
                 ;;
             [nN][oO]|[nN])
                 echo "Reboot cancelled. Please remember to reboot for the VanPi system to work properly!"
-                exit
+                break
                 ;;
             *)
                 echo "Invalid input... please type 'y' (yes) or 'n' (no)"
@@ -655,4 +656,6 @@ else
 fi
 
 # If no reboot, restart Node-RED
+echo "No reboot, will try to restart Node-RED service..."
 sudo systemctl restart nodered.service
+echo "Exiting now. Bye Bye!"

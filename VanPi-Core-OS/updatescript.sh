@@ -551,7 +551,7 @@ echo "Extracting user flows from flows_pekaway.json to extracted_user_flows.json
 jq '
 . as $all |
 
-($all | map(select(.type == "tab" and (.label | test("user ?flow"; "i"))))) as $tabs |
+($all | map(select(.type == "tab" and (.label | test(".*user\\s*flow.*"; "i"))))) as $tabs |
 
 ($tabs | map(.id)) as $tab_ids |
 

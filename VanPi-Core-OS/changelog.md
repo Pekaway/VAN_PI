@@ -1,3 +1,38 @@
+# Update 2.0.6 (30. Jun. 2025)
+- fixed replacement of the very first item in BLE scan array
+- removed while loop in "check relays to set" for inputs (Relay Controller)
+- fixed bug that sets back the variable for usage of older relayboard on boot
+- added support for MaxxFan (Multicom) and Bayernluefter (HTTP)
+- added functions to control new fans from Pekaway touchdisplay
+- added http and mqtt functions to control new fans remotely
+- renamed group "MaxxFan" to just "Fan"
+- fixed error in display for victron ttgo
+- fixed "all off" and "selected all off" http functions, they were applying double transitions that lead to flickering when turning off
+- MCP input status changes are now pushed to MQTT on topic "pkw/tele/input"
+- added uhubctl to restart USB ports on RPI5
+- added calculations of absolute g_forces to mpu_angle.py
+- added support for new BMI270 chip on VAN PI Core Pro (replaces MPU6050)
+- changed autooff variables from integer to float to support sub-minute values
+- fixed error not initializing BLE MPPT when set as only BLE device
+- fixed function to set server time from browser time (client)
+- fixed mqtt support for shelly gen.2
+- added mqtt topic to show changes from tasmota relays
+- fixed mqtt wrelays when set from Homebridge
+- fixed a problem with filters after relays/wrealys/dimmers to fix problem with time schedulers
+- changes to /boot/firmware/config.txt:
+    - set arm_freq_min to 600MHz and arm_freq to 1500MHz to reduce cpu/power consumption and heat
+    - set fixed gpu frequencies
+    - added options to disable internal bluetooth (commented out by default)
+    - disabled HDMI (!)
+- changed act_led trigger to "heartbeat" for external act led on VAN PI core (and core pro)
+- added new global variable "i2c_detect" to get available i2c_adresses on boot
+- added new functions to retrieve data from Pekaway MQTT shunt
+- reworked boiler control flow
+    - added automatic temp control
+    - added emergency limits for water level and temperatures
+    - moved boiler control to new tab "Devices" in config
+- added functions to use a 11-point calibration method for waterlevels (needs to be hardcoded!)
+
 # Update 2.0.5 (13. Jan. 2025)
 - fixed 2nd autoterm temp sensor for temp mode
 - fixed userdata setting old version number when restoring userdata

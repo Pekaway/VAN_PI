@@ -9,6 +9,7 @@ Adafruit-PlatformDetect
 Adafruit-PureIO
 adafruit-python-shell
 args
+binho-host-adapter
 bleak
 bottle
 certifi
@@ -29,6 +30,7 @@ pip
 ptyprocess
 pycryptodomex
 pyftdi
+PyGObject
 pyserial
 python-apt
 pyusb

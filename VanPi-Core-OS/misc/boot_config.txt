@@ -1,8 +1,8 @@
 # For more options and information see
 # http://rptl.io/configtxt
 # Some settings may impact device functionality. See link above for details
-
 # Uncomment some or all of these to enable the optional hardware interfaces
+
 dtparam=i2c_arm=on
 #dtparam=i2s=on
 #dtparam=spi=on
@@ -37,7 +37,7 @@ arm_64bit=1
 disable_overscan=1
 
 # Run as fast as firmware / board allows
-arm_boost=1
+arm_boost=0
 
 [cm4]
 # Enable host mode on the 2711 built-in XHCI USB controller.
@@ -45,13 +45,36 @@ arm_boost=1
 # (e.g. for USB device mode) or if USB support is not required.
 otg_mode=1
 
-[all]
-
-dtoverlay=w1-gpio
+[pi4]
+# UART configuration for Pi 4
+enable_uart=1
 dtoverlay=uart5
+# disable internal bluetooth on pi4:
+#dtoverlay=disable-bt
+
+# ARM frequencies for Pi 4
+arm_freq=1400
+arm_freq_min=600
+
+[pi5]
+# UART configuration for Pi 5
+enable_uart=1
 dtoverlay=uart0-pi5
 dtoverlay=uart4-pi5
-enable_uart=1
+dtoverlay=uart5
+# disable internal bluetooth on pi5:
+#dtoverlay=disable-bt-pi5
 
+# ARM frequencies for Pi 5
+arm_freq=1500
+arm_freq_min=600
+
+#turn HDMI off
+hdmi_blanking=2
+
+[all]
+
+# 1-Wire interface
+dtoverlay=w1-gpio
 # copy act led to external led on Van Pi Core board
-dtoverlay=gpio-led,gpio=22,label=vpicore_act_led,trigger=mmc0
+dtoverlay=gpio-led,gpio=22,label=vpicore_act_led,trigger=heartbeat

@@ -14,9 +14,9 @@
 Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
 ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
 LfsServerFiles='https://media.githubusercontent.com/media/Pekaway/VAN_PI/main/VanPi-Core-OS/'
-Version='v2.0.5'		### <--- set new version number VanPi OS
+Version='v2.0.6'		### <--- set new version number VanPi OS
 NSPanelVersion='0.0.1'	### <--- set new version number NSPanel
-TouchdisplayVersion='2.0.1'	### <--- set new version number Touchdisplay
+TouchdisplayVersion='2.0.2'	### <--- set new version number Touchdisplay
 currentVersion=`cat ~/pekaway/version`
 
 # Define the file for logrotate and the desired line value
@@ -202,6 +202,7 @@ rm -f autoexec.be
 rm -f /ads_py/simplelevel.py
 rm -f /ads_py/web2.py
 rm -f /ds18b20_py/ds18b20.py
+rm -f /bmi270_project/bmi270_demo
 
 sudo rm -f /boot/*.tft # delete old .tft for touchdisplay if it exists
 sudo rm -f /boot/firmware/*.tft # delete old .tft for touchdisplay if it exists
@@ -256,6 +257,8 @@ wget_retry "${ServerFiles}data/ads_py/web2.py"
 sleep 1
 wget_retry "${ServerFiles}data/ds18b20_py/ds18b20.py"
 sleep 1
+wget_retry "${ServerFiles}data/bmi270_project/bmi270_demo"
+sleep 1
 wget_retry "${ServerFiles}misc/boot_config.txt"
 sleep 1
 wget_retry "${ServerFiles}misc/98-pekaway-tty.rules"
@@ -296,6 +299,11 @@ done
 # create needed files if they dont exist
 touch ~/pekaway/combined_temp_chart
 touch ~/pekaway/combined_ruuvi_chart
+# create relayboard_core file if it doesn't exist with defgault value "false"
+FILE=~/pekaway/relayboard_core
+if [ ! -f "$FILE" ]; then
+    echo "false" > "$FILE"
+fi
 
 
 # move TouchDisplay .tft file to /boot to be able to use SD-card to update Touchdisplay
@@ -309,6 +317,7 @@ sudo mv PekawayTouch.tft /boot/firmware/PekawayTouch${TouchdisplayVersion}.tft
 mv -f ds18b20.py ~/pekaway/ds18b20_py/ds18b20.py
 mv -f simplelevel.py ~/pekaway/ads_py/simplelevel.py
 mv -f web2.py ~/pekaway/ads_py/web2.py
+mv -f bmi270_demo ~/pekaway/bmi270_project/bmi270_demo
 mv -f pythonsqlite.db ~/pekaway/pythonsqlite.db
 sudo chown root:root boot_config.txt
 sudo mv -f boot_config.txt /boot/firmware/config.txt
@@ -537,6 +546,30 @@ else
 fi
 
 
+# extract user flows from original flows.json file
+echo "Extracting user flows from flows_pekaway.json to extracted_user_flows.json in NR folder"
+jq '
+. as $all |
+
+($all | map(select(.type == "tab" and (.label | test("user ?flow"; "i"))))) as $tabs |
+
+($tabs | map(.id)) as $tab_ids |
+
+($all | map(select(.z != null and (.z as $z | $tab_ids | index($z))))) as $nodes |
+
+($nodes | map(select(.group? != null) | .group)) as $group_ids |
+
+($all | map(select(.type == "ui_group" and (.id as $id | $group_ids | index($id))))) as $groups |
+
+($groups | map(.tab)) as $ui_tab_ids |
+
+($all | map(select(.type == "ui_tab" and (.id as $id | $ui_tab_ids | index($id))))) as $ui_tabs |
+
+$tabs + $nodes + $groups + $ui_tabs
+' ~/.node-red/flows_pekaway.json > ~/.node-red/extracted_user_flows.json
+
+cp flows_pekaway.json flows_pekaway.json.bkp
+
 # Download new flows and replace the old file
 sleep 3
 show_progress "getting new flows"
@@ -572,6 +605,12 @@ else
     sleep 3
     exit 1
 fi
+
+# Merge flows_pekaway.json with extracted_user_flows.json and save to merged_flows.json
+echo "Merging flows_pekaway.json and extracted_user_flows.json, saving as merged_flows.json"
+jq -s '[.[0][] , .[1][]]' flows_pekaway.json extracted_user_flows.json > merged_flows.json
+# remove orignal flows file and replace with merged_flows.json
+rm flows_pekaway.json && mv merged_flows.json flows_pekaway.json
 
 # Clean up and proceed with the rest of the script
 rm ~/pekaway/pkwUpdate/flows_pekaway.json

@@ -319,6 +319,7 @@ mv -f ds18b20.py ~/pekaway/ds18b20_py/ds18b20.py
 mv -f simplelevel.py ~/pekaway/ads_py/simplelevel.py
 mv -f web2.py ~/pekaway/ads_py/web2.py
 mv -f bmi270_demo ~/pekaway/bmi270_project/bmi270_demo
+chmod 755 ~/pekaway/bmi270_project/bmi270_demo
 mv -f pythonsqlite.db ~/pekaway/pythonsqlite.db
 sudo chown root:root boot_config.txt
 sudo mv -f boot_config.txt /boot/firmware/config.txt

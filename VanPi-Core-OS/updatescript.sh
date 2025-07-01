@@ -260,8 +260,8 @@ wget_retry "${ServerFiles}data/ds18b20_py/ds18b20.py"
 sleep 1
 wget_retry "${ServerFiles}data/bmi270_project/bmi270_demo"
 sleep 1
-wget_retry "${ServerFiles}misc/boot_config.txt"
-sleep 1
+# wget_retry "${ServerFiles}misc/boot_config.txt"
+# sleep 1
 wget_retry "${ServerFiles}misc/98-pekaway-tty.rules"
 sleep 1
 wget_retry "${ServerFiles}nginx/pekaway1"
@@ -321,8 +321,8 @@ mv -f web2.py ~/pekaway/ads_py/web2.py
 mv -f bmi270_demo ~/pekaway/bmi270_project/bmi270_demo
 chmod 755 ~/pekaway/bmi270_project/bmi270_demo
 mv -f pythonsqlite.db ~/pekaway/pythonsqlite.db
-sudo chown root:root boot_config.txt
-sudo mv -f boot_config.txt /boot/firmware/config.txt
+# sudo chown root:root boot_config.txt
+# sudo mv -f boot_config.txt /boot/firmware/config.txt
 sudo mv -f 98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules
 sudo mv -f pekaway1 /etc/nginx/sites-available/pekaway1
 # create symlink for nginx pekaway1

@@ -179,6 +179,54 @@ sudo pip3 install bottle --break-system-packages
 pip3 install -r ~/VAN_PI/VanPi-Core-OS/piplist.txt --break-system-packages
 pip3 install bottle --break-system-packages
 
+# Intalling powersave mode systemd service for wifi connection 
+echo "Installing powersave mode for wifi connection"
+show_progress "checking powersave mode for wifi"
+
+SERVICE_NAME="wifi-powersave-off.service"
+SERVICE_PATH="/etc/systemd/system/$SERVICE_NAME"
+
+# Detect RPi model
+PI_MODEL=$(tr -d '\0' < /proc/device-tree/model)
+echo "Detected model: $PI_MODEL"
+
+# Optional: skip for non-Raspberry Pi systems
+if [[ "$PI_MODEL" != Raspberry* ]]; then
+    echo "Not a Raspberry Pi. Skipping WiFi power save config."
+    exit 0
+fi
+
+# Check if service already exists
+if [ ! -f "$SERVICE_PATH" ]; then
+    echo "Installing $SERVICE_NAME..."
+
+    cat <<EOF | sudo tee "$SERVICE_PATH" > /dev/null
+[Unit]
+Description=Disable WiFi Power Save Mode
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/iw dev wlan0 set power_save off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reexec
+    sudo systemctl daemon-reload
+    sudo systemctl enable "$SERVICE_NAME"
+    sudo systemctl start "$SERVICE_NAME"
+
+    echo "$SERVICE_NAME installed and started."
+else
+    echo "$SERVICE_NAME already installed. Ensuring it's enabled and started..."
+    sudo systemctl enable "$SERVICE_NAME"
+    sudo systemctl start "$SERVICE_NAME"
+fi
+
 
 # install Node-RED including Node and npm
 echo -e "${Cyan}Installing/updating Node-RED, NodeJS and npm${NC}"

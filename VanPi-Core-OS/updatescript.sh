@@ -658,9 +658,15 @@ fi
 
 # Merge flows_pekaway.json with extracted_user_flows.json and save to merged_flows.json
 echo "Merging flows_pekaway.json and extracted_user_flows.json, saving as merged_flows.json"
-jq -s '[.[0][] , .[1][]]' ~/.node-red/flows_pekaway.json ~/.node-red/extracted_user_flows.json > ~/.node-red/merged_flows.json
-# remove orignal flows file and replace with merged_flows.json
-rm ~/.node-red/flows_pekaway.json && rm ~/.node-red/extracted_user_flows.json && mv ~/.node-red/merged_flows.json ~/.node-red/flows_pekaway.json
+if [ -s ~/.node-red/extracted_user_flows.json ] && jq empty ~/.node-red/extracted_user_flows.json >/dev/null 2>&1; then
+    jq -s '[.[0][] , .[1][]]' ~/.node-red/flows_pekaway.json ~/.node-red/extracted_user_flows.json > ~/.node-red/merged_flows.json &&
+    rm ~/.node-red/flows_pekaway.json ~/.node-red/extracted_user_flows.json &&
+    mv ~/.node-red/merged_flows.json ~/.node-red/flows_pekaway.json
+else
+    echo "No valid user flows to merge. Skipping merging."
+    rm -f ~/.node-red/extracted_user_flows.json  # Clean up even if it's empty
+fi
+
 
 # Clean up and proceed with the rest of the script
 rm ~/pekaway/pkwUpdate/flows_pekaway.json

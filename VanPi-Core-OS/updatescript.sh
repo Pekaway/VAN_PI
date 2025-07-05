@@ -618,7 +618,7 @@ jq '
 $tabs + $nodes + $groups + $ui_tabs
 ' ~/.node-red/flows_pekaway.json > ~/.node-red/extracted_user_flows.json
 
-cp ~/.node-red/flows_pekaway.json ~/.node-red/flows_pekaway.json.bkp
+cp ~/.node-red/flows_pekaway.json ~/.node-red/.flows_pekaway.json.bkp
 
 # Download new flows and replace the old file
 sleep 3

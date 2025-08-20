@@ -1,3 +1,20 @@
+# Update 2.0.7 (18. Aug. 2025)
+- added functions to support In-Out-X relays
+- added functions to support dimmers and RGBW channels on DimmyPro
+- added functions to support Truma Combi Heater using CI-Bus
+- added binary ci2mqtt and corrosponding .env file
+- added functions to support Truma Control from touchdisplay
+- adjusted HTTP API to support new functions (smartphone app)
+    - includes dimmyPro + rgbw stripes, In-Out-X, Truma Combi Heater control
+- adjusted MQTT API to support new functions (smartphone app)
+    - includes dimmyPro + rgbw stripes, In-Out-X, Truma Combi Heater  control
+- fixed smaller mistakes in VE.Direct flow
+- fixed small mistake when creating a new ssh hostkey
+- rewrote "resize filesystem" function to properly display NVMe drive sizes
+- rewrote functions to get key:value pairs for mcpinputs
+- added SmartShunt 300A IP65 50mV 0xC039 to VE Direct flow
+- swapped x- and y-angle for BMI270 to replicate GPU6050 data
+
 # Update 2.0.6 (30. Jun. 2025)
 - fixed replacement of the very first item in BLE scan array
 - removed while loop in "check relays to set" for inputs (Relay Controller)

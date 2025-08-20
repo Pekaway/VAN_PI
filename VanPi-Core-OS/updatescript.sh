@@ -14,9 +14,9 @@
 Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
 ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
 LfsServerFiles='https://media.githubusercontent.com/media/Pekaway/VAN_PI/main/VanPi-Core-OS/'
-Version='v2.0.6'		### <--- set new version number VanPi OS
+Version='v2.0.7'		### <--- set new version number VanPi OS
 NSPanelVersion='0.0.1'	### <--- set new version number NSPanel
-TouchdisplayVersion='2.0.2'	### <--- set new version number Touchdisplay
+TouchdisplayVersion='2.0.3'	### <--- set new version number Touchdisplay
 currentVersion=`cat ~/pekaway/version`
 
 # Define the file for logrotate and the desired line value
@@ -260,6 +260,10 @@ wget_retry "${ServerFiles}data/ds18b20_py/ds18b20.py"
 sleep 1
 wget_retry "${ServerFiles}data/bmi270_project/bmi270_demo"
 sleep 1
+wget_retry "${ServerFiles}data/ci2mqtt/ci_mqtt_bridge"
+sleep 1
+wget_retry "${ServerFiles}data/ci2mqtt/.env"
+sleep 1
 # wget_retry "${ServerFiles}misc/boot_config.txt"
 # sleep 1
 wget_retry "${ServerFiles}misc/98-pekaway-tty.rules"
@@ -271,9 +275,10 @@ sleep 1
 wget_retry "${ServerFiles}touchdisplay/PekawayTouch.tft"
 sleep 1
 
+
 # create files for mcp inputs if the don't exist
 # add json into files if they don't exist
-for i in {1..8}
+for i in {1..16}
 do
 	touch ~/pekaway/mcpinput"$i"
 	touch ~/pekaway/mcpinput"$i"_type
@@ -305,7 +310,21 @@ FILE=~/pekaway/relayboard_core
 if [ ! -f "$FILE" ]; then
     echo "false" > "$FILE"
 fi
+# Create Dimmy Pro RGBW definition files with JSON if they don't exist
+FILE1=~/pekaway/dimmyProRgbw1
+FILE2=~/pekaway/dimmyProRgbw2
 
+if [ ! -f "$FILE1" ]; then
+    echo '{"isRgbw": true, "name": "Dimmy Pro RGBW 1"}' > "$FILE1"
+fi
+if [ ! -f "$FILE2" ]; then
+    echo '{"isRgbw": true, "name": "Dimmy Pro RGBW 2"}' > "$FILE2"
+fi
+# create relayboard_core file if it doesn't exist with defgault value "false"
+FILE3=~/pekaway/trumaCi
+if [ ! -f "$FILE3" ]; then
+    echo "false" > "$FILE3"
+fi
 
 # move TouchDisplay .tft file to /boot to be able to use SD-card to update Touchdisplay
 sudo chown root:root PekawayTouch.tft # cannot preserve ownership in root directory
@@ -321,6 +340,10 @@ mv -f web2.py ~/pekaway/ads_py/web2.py
 mv -f bmi270_demo ~/pekaway/bmi270_project/bmi270_demo
 chmod 755 ~/pekaway/bmi270_project/bmi270_demo
 mv -f pythonsqlite.db ~/pekaway/pythonsqlite.db
+mkdir ~/pekaway/ci2mqtt
+mv -f ci_mqtt_bridge ~/pekaway/ci2mqtt/ci_mqtt_bridge
+chmod 755 ~/pekaway/ci2mqtt/ci_mqtt_bridge
+mv -f .env ~/pekaway/ci2mqtt/.env
 # sudo chown root:root boot_config.txt
 # sudo mv -f boot_config.txt /boot/firmware/config.txt
 sudo mv -f 98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules

@@ -1,3 +1,19 @@
+# Update 2.0.8 (26. Aug. 2025)
+- added functions to support a seperate scheduler for Truma CI water
+    - includes options to choose between "eco" and "hot" mode
+- fixed showing/hiding the DimmyPro Switch Timer in the corrosponding config tab
+- added functions to automatically alter /boot/firmware/config.txt:
+    - VANPI Core: "dtoverlay=w1-gpio" will be set (DS18B20)
+    - VANPI Core Pro: "dtoverlay=w1-gpio,gpiopin=20" will be set (DS18B20)
+    - depending on the number of hci devices (bluetooth adapters), internal bluetooth will either be de- or activated
+        - 0 hci devices: activate internal bluetooth
+        - 1 hci device: keep it as it is
+        - 2 hci devices: external bluetooth dongle detected, deactivate internal bluetooth
+    - the check will execute 10s after NR has started
+    - any changes made to /boot/firmware/config.txt will include an automatic reboot
+- added debug options to show Bluetooth adapters, boot config and boot flags
+- rewrote dashboard display for VE.Direct
+
 # Update 2.0.7 (18. Aug. 2025)
 - added functions to support In-Out-X relays
 - added functions to support dimmers and RGBW channels on DimmyPro

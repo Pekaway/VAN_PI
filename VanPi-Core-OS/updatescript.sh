@@ -14,7 +14,7 @@
 Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
 ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
 LfsServerFiles='https://media.githubusercontent.com/media/Pekaway/VAN_PI/main/VanPi-Core-OS/'
-Version='v2.0.7'		### <--- set new version number VanPi OS
+Version='v2.0.8'		### <--- set new version number VanPi OS
 NSPanelVersion='0.0.1'	### <--- set new version number NSPanel
 TouchdisplayVersion='2.0.4'	### <--- set new version number Touchdisplay
 currentVersion=`cat ~/pekaway/version`

@@ -60,8 +60,9 @@ arm_freq_min=600
 # UART configuration for Pi 5
 enable_uart=1
 dtoverlay=uart0-pi5
+dtoverlay=uart1-pi5
 dtoverlay=uart4-pi5
-dtoverlay=uart5
+dtoverlay=uart5-pi5
 # disable internal bluetooth on pi5:
 #dtoverlay=disable-bt-pi5
 
@@ -75,6 +76,6 @@ hdmi_blanking=2
 [all]
 
 # 1-Wire interface
-dtoverlay=w1-gpio
+dtoverlay=w1-gpio,gpiopin=20
 # copy act led to external led on Van Pi Core board
 dtoverlay=gpio-led,gpio=22,label=vpicore_act_led,trigger=heartbeat

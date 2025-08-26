@@ -264,8 +264,8 @@ wget_retry "${ServerFiles}data/ci2mqtt/ci_mqtt_bridge"
 sleep 1
 wget_retry "${ServerFiles}data/ci2mqtt/.env"
 sleep 1
-# wget_retry "${ServerFiles}misc/boot_config.txt"
-# sleep 1
+wget_retry "${ServerFiles}misc/boot_config.txt"
+sleep 1
 wget_retry "${ServerFiles}misc/98-pekaway-tty.rules"
 sleep 1
 wget_retry "${ServerFiles}nginx/pekaway1"
@@ -344,8 +344,8 @@ mkdir ~/pekaway/ci2mqtt
 mv -f ci_mqtt_bridge ~/pekaway/ci2mqtt/ci_mqtt_bridge
 chmod 755 ~/pekaway/ci2mqtt/ci_mqtt_bridge
 mv -f .env ~/pekaway/ci2mqtt/.env
-# sudo chown root:root boot_config.txt
-# sudo mv -f boot_config.txt /boot/firmware/config.txt
+sudo chown root:root boot_config.txt
+sudo mv -f boot_config.txt /boot/firmware/config.txt
 sudo mv -f 98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules
 sudo mv -f pekaway1 /etc/nginx/sites-available/pekaway1
 # create symlink for nginx pekaway1

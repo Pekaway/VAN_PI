@@ -390,48 +390,60 @@ echo "comparing original package.json with the new one:"
 sleep 3
 show_progress "checking package.json"
 
-extramodules=$(diff <(jq --sort-keys .dependencies ~/.node-red/package.json) <(jq --sort-keys .dependencies ~/pekaway/nrbackups/package-backup.json) | grep '>')
+extramodules=$(diff <(jq --sort-keys .dependencies ~/.node-red/package.json) \
+                    <(jq --sort-keys .dependencies ~/pekaway/nrbackups/package-backup.json) | grep '>')
 
 if [[ -n $extramodules ]]; then
     echo -e "Your original package.json file has the following additonal modules listed:"
-	echo -e "$extramodules"
+    echo -e "$extramodules"
 
-   if [[ "$1" == "node-red-auto-update" ]] || [[ "$needUpdate" == 'true' ]]; then
-	echo -e "updating from Node-RED, adding additional lines automatically."
-		# cd ~/.node-red
-		echo `jq -s '.[0] * .[1]' ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json` > ~/pekaway/nrbackups/package1.json && jq . ~/pekaway/nrbackups/package1.json > ~/pekaway/nrbackups/pretty.json && rm ~/pekaway/nrbackups/package1.json && mv ~/pekaway/nrbackups/pretty.json ~/pekaway/nrbackups/package1.json
-		echo "Missing lines have been added to package.json"
-		echo "New package.json:"
-		cat ~/.node-red/package.json
-   else
-		while true; do
-			read -r -p "Do you want them to be added to the new package.json? [y/n]" input
-			case $input in
-				  [yY][eE][sS]|[yY])
-						# cd ~/.node-red
-						echo `jq -s '.[0] * .[1]' ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json` > ~/pekaway/nrbackups/package-backup1.json
-						jq . ~/pekaway/nrbackups/package-backup1.json > ~/pekaway/nrbackups/pretty.json 
-						mv ~/pekaway/nrbackups/package-backup.json ~/pekaway/package-backup.json # keep backup just in case
-						rm -f ~/pekaway/nrbackups/package1.json
-						mv ~/pekaway/nrbackups/pretty.json ~/.node-red/package.json
-						echo "Missing lines have been added to package.json"
-						echo "New ~/.node-red/package.json:"
-						cat ~/.node-red/package.json
-						break
-						;;
-				  [nN][oO]|[nN])
-						echo "No modules added to package.json, proceeding..."
-						break
-						;;
-				  *)
-						echo "Invalid input... please type 'y' (yes) or 'n' (no)"
-						;;
-			esac
-		done
-	fi
+    if [[ "$1" == "node-red-auto-update" ]] || [[ "$needUpdate" == 'true' ]]; then
+        echo -e "updating from Node-RED, adding additional lines automatically."
+        # merge to temp
+        jq -s '.[0] * .[1]' ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json > ~/pekaway/nrbackups/package1.json
+        # pretty print
+        jq . ~/pekaway/nrbackups/package1.json > ~/pekaway/nrbackups/pretty.json
+        # replace target (THIS is the missing write-back)
+        mv ~/pekaway/nrbackups/pretty.json ~/.node-red/package.json
+        # cleanup
+        rm -f ~/pekaway/nrbackups/package1.json
+        echo "Missing lines have been added to package.json"
+        echo "New package.json:"
+        cat ~/.node-red/package.json
+    else
+        while true; do
+            read -r -p "Do you want them to be added to the new package.json? [y/n]" input
+            case $input in
+                [yY][eE][sS]|[yY])
+                    # merge to temp
+                    jq -s '.[0] * .[1]' ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json > ~/pekaway/nrbackups/package-backup1.json
+                    # pretty print
+                    jq . ~/pekaway/nrbackups/package-backup1.json > ~/pekaway/nrbackups/pretty.json
+                    # keep a backup just in case
+                    mv ~/pekaway/nrbackups/package-backup.json ~/pekaway/package-backup.json
+                    # replace target
+                    mv ~/pekaway/nrbackups/pretty.json ~/.node-red/package.json
+                    # cleanup
+                    rm -f ~/pekaway/nrbackups/package1.json ~/pekaway/nrbackups/package-backup1.json 2>/dev/null
+                    echo "Missing lines have been added to package.json"
+                    echo "New ~/.node-red/package.json:"
+                    cat ~/.node-red/package.json
+                    break
+                    ;;
+                [nN][oO]|[nN])
+                    echo "No modules added to package.json, proceeding..."
+                    break
+                    ;;
+                *)
+                    echo "Invalid input... please type 'y' (yes) or 'n' (no)"
+                    ;;
+            esac
+        done
+    fi
 else
     echo "modules are identical, proceeding..."
 fi
+
 
 #install npm modules from package.json
 sleep 3

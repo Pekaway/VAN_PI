@@ -13,6 +13,10 @@
     - any changes made to /boot/firmware/config.txt will include an automatic reboot
 - added debug options to show Bluetooth adapters, boot config and boot flags
 - rewrote dashboard display for VE.Direct
+- added option to use BETA channel for online update
+- set waterlevel calibration method with 11 points to global variables
+    - can be updated/overwritten from userflow
+- fixed dimmyPro name error
 
 # Update 2.0.7 (18. Aug. 2025)
 - added functions to support In-Out-X relays

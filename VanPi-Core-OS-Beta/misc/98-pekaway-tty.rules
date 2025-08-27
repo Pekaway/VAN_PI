@@ -1,0 +1,18 @@
+### rules for RPI4
+
+KERNEL=="ttyUSB*", KERNELS=="1-1.1", SYMLINK+="ttyPKW1"
+KERNEL=="ttyUSB*", KERNELS=="1-1.2", SYMLINK+="ttyPKW2"
+KERNEL=="ttyUSB*", KERNELS=="1-1.3", SYMLINK+="ttyPKW3"
+KERNEL=="ttyUSB*", KERNELS=="1-1.4", SYMLINK+="ttyPKW4"
+KERNEL=="ttyACM*", KERNELS=="1-1.1", SYMLINK+="ttyGPS"
+KERNEL=="ttyACM*", KERNELS=="1-1.2", SYMLINK+="ttyZigbee"
+
+### rules for RPI5
+# (ETH and USB positions changed!)
+# (Zigbee and GPS are swapped for better fittings on board!)
+KERNEL=="ttyUSB*", KERNELS=="3-1:1.0", SYMLINK+="ttyPKW1"
+KERNEL=="ttyUSB*", KERNELS=="1-1:1.0", SYMLINK+="ttyPKW2"
+KERNEL=="ttyUSB*", KERNELS=="1-2:1.0", SYMLINK+="ttyPKW3"
+KERNEL=="ttyUSB*", KERNELS=="3-2:1.0", SYMLINK+="ttyPKW4"
+KERNEL=="ttyACM*", KERNELS=="3-1:1.0", SYMLINK+="ttyZigbee"
+KERNEL=="ttyACM*", KERNELS=="1-1:1.0", SYMLINK+="ttyGPS"

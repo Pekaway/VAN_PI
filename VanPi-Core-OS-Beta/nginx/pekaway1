@@ -1,0 +1,63 @@
+
+server {
+        listen 80;
+         server_name peka.way van.pi pekaway.local;
+
+         location / {
+                 proxy_pass http://127.0.0.1:1880/ui/;
+        }
+        location /autoexec.be {
+                alias /home/pi/pekaway/autoexec.be;
+                add_header Content-Disposition 'attachment; filename="autoexec.be"';
+        }
+        location /nspaneltft {
+                alias /home/pi/pekaway/VanPI_NSPANEL.tft;
+                add_header Content-Disposition 'attachment; filename="VanPI_NSPANEL.tft"';
+        }
+         location /images/van_side {
+		alias /home/pi/pekaway/mpu_py/van_side.png;
+        }
+        location /images/van_back {
+                alias /home/pi/pekaway/mpu_py/van_back.png;
+        }
+}
+
+server {
+        listen 80;
+        server_name homebridge.peka.way;
+
+        location / {
+                proxy_pass http://127.0.0.1:8581/;
+        }
+}
+
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        server_name _;
+
+        location /images/van_side {
+		 alias /home/pi/pekaway/mpu_py/van_side.png;
+        }
+        location /images/van_back {
+		 alias /home/pi/pekaway/mpu_py/van_back.png;
+        }
+ 
+       location / {
+                 proxy_pass http://127.0.0.1:1880/ui/;
+        }
+        location /autoexec.be {
+                alias /home/pi/pekaway/autoexec.be;
+                add_header Content-Disposition 'attachment; filename="autoexec.be"';
+        }
+        location /nspaneltft {
+                alias /home/pi/pekaway/VanPI_NSPANEL.tft;
+                add_header Content-Disposition 'attachment; filename="VanPI_NSPANEL.tft"';
+        }
+
+        # Redirect all requests to pekaway.local
+        #return 301 $scheme://pekaway.local$request_uri;
+}
+
+
+

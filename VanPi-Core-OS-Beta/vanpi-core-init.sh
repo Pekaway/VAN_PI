@@ -26,9 +26,9 @@ start=`date +%s`
 startdate=`date`
 
 # define server address
-Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
-ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
-LfsServerFiles='https://media.githubusercontent.com/media/Pekaway/VAN_PI/main/VanPi-Core-OS/'
+Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS-Beta/'
+ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS-Beta/'
+LfsServerFiles='https://media.githubusercontent.com/media/Pekaway/VAN_PI/main/VanPi-Core-OS-Beta/'
 GithubRepo='https://github.com/Pekaway/VAN_PI.git'
 
 # define color variables
@@ -124,7 +124,7 @@ sudo apt install -y git make build-essential jq log2ram
 # enable I2C and 1-Wire
 echo -e "${Cyan}Enabling I2C and 1-Wire Bus${NC}"
 sudo raspi-config nonint do_i2c 0
-echo -e "dtoverlay=w1-gpio\ndtoverlay=uart5\ndtoverlay=uart0-pi5\ndtoverlay=uart4-pi5\nenable_uart=1\n\n# copy act led to external led on Van Pi Core board\ndtoverlay=gpio-led,gpio=22,label=vpicore_act_led,trigger=mmc0" | sudo tee -a /boot/firmware/config.txt
+echo -e "dtoverlay=w1-gpio\ndtoverlay=uart5\ndtoverlay=uart0-pi5\ndtoverlay=uart1-pi5\ndtoverlay=uart4-pi5\nenable_uart=1\n\n# copy act led to external led on Van Pi Core board\ndtoverlay=gpio-led,gpio=22,label=vpicore_act_led,trigger=mmc0" | sudo tee -a /boot/firmware/config.txt
 
 # Set iptables-persistent to true
 sudo debconf-set-selections <<EOF
@@ -143,13 +143,13 @@ sudo apt install git-lfs # use git lfs for larger files like .json files etc
 git lfs install
 git clone --filter=blob:none --no-checkout ${GithubRepo}
 cd VAN_PI
-git sparse-checkout set VanPi-Core-OS
+git sparse-checkout set VanPi-Core-OS-Beta
 git checkout
 
 
 # get packages list from server and install and keep old config files
 echo -e "${Cyan}Get packages.txt from server and install while keeping old config files${NC}"
-sudo apt install -y -o Dpkg::Options::="--force-confold" $(cat VanPi-Core-OS/packages.txt)
+sudo apt install -y -o Dpkg::Options::="--force-confold" $(cat VanPi-Core-OS-Beta/packages.txt)
 
 # save needed resources to ~/pekaway
 echo -e "${Cyan}creating default values for pekaway/vanpi resources ~/pekaway${NC}"
@@ -157,13 +157,13 @@ mkdir ~/pekaway
 cd ~/pekaway
 
 # create folder structure:
-cp -r ~/VAN_PI/VanPi-Core-OS/data/* ~/pekaway/
+cp -r ~/VAN_PI/VanPi-Core-OS-Beta/data/* ~/pekaway/
 
 # creating needed files (empty ones)
 touch btbmstype van_name dimmeripaddr MACliontron LFBRosON LFBrosOFF LFBrosPLUS LFBrosMINUS installdate boiler_Relay boilertemp_sensor espshuntmac ruuvitag_0_name ruuvitag_1_name ruuvitag_2_name MACmppt ttgoinfo
 
-# wget -O ~/VAN_PI/VanPi-Core-OS/misc/defaultvalues.json ${ServerFiles}misc/defaultvalues.json
-json_file="${HOME}/VAN_PI/VanPi-Core-OS/misc/defaultvalues.json"
+# wget -O ~/VAN_PI/VanPi-Core-OS-Beta/misc/defaultvalues.json ${ServerFiles}misc/defaultvalues.json
+json_file="${HOME}/VAN_PI/VanPi-Core-OS-Beta/misc/defaultvalues.json"
 # Loop through the keys in the JSON file and create files with default values
 jq -r 'to_entries | .[] | "\(.key)=\(.value)"' "$json_file" | while IFS='=' read -r filename value; do
     echo "$value" > "$filename"
@@ -174,9 +174,9 @@ sudo apt install python3-pip -y
 # install python modules locally (user pi) and globally (root)
 echo "Installing Python modules with --break-system-packages, please stand by..."
 sudo -H pip3 install --upgrade pip --break-system-packages
-sudo pip3 install -r ~/VAN_PI/VanPi-Core-OS/piplist.txt --break-system-packages
+sudo pip3 install -r ~/VAN_PI/VanPi-Core-OS-Beta/piplist.txt --break-system-packages
 sudo pip3 install bottle --break-system-packages
-pip3 install -r ~/VAN_PI/VanPi-Core-OS/piplist.txt --break-system-packages
+pip3 install -r ~/VAN_PI/VanPi-Core-OS-Beta/piplist.txt --break-system-packages
 pip3 install bottle --break-system-packages
 
 # Intalling powersave mode systemd service for wifi connection 
@@ -245,7 +245,7 @@ echo -e "${Cyan}Installing/updating Node-RED modules...${NC}"
 cd ~/.node-red
 rm package.json
 rm package-lock.json
-cp ~/VAN_PI/VanPi-Core-OS/node-red/package.json .
+cp ~/VAN_PI/VanPi-Core-OS-Beta/node-red/package.json .
 echo -e "${Cyan}Please stand by! This may take a while!${NC}"
 echo -e "${Yellow}It may look frozen, but it is not! Please leave it running and wait patiently.${NC}"
 echo -e "${Yellow}Go grab a coffee and relax for a while, I'll take care of the rest :)${NC}"
@@ -255,9 +255,9 @@ npm update
 echo -e "${Cyan}Installing/updating Node-RED Pekaway VanPi flows...${NC}"
 rm ~/.node-red/flows.json
 cd ~/pekaway
-cp ~/VAN_PI/VanPi-Core-OS/node-red/flows_pekaway.json ~/.node-red/flows_pekaway.json
+cp ~/VAN_PI/VanPi-Core-OS-Beta/node-red/flows_pekaway.json ~/.node-red/flows_pekaway.json
 cd ~/.node-red/node_modules/node-red-dashboard/dist
-cp ~/VAN_PI/VanPi-Core-OS/node-red/icons.zip .
+cp ~/VAN_PI/VanPi-Core-OS-Beta/node-red/icons.zip .
 mv ~/.node-red/node_modules/node-red-dashboard/dist/icon64x64.png ~/.node-red/node_modules/node-red-dashboard/dist/icon64x64_old.png
 mv ~/.node-red/node_modules/node-red-dashboard/dist/icon120x120.png ~/.node-red/node_modules/node-red-dashboard/dist/icon120x120_old.png
 mv ~/.node-red/node_modules/node-red-dashboard/dist/icon192x192.png ~/.node-red/node_modules/node-red-dashboard/dist/icon192x192_old.png
@@ -266,7 +266,7 @@ unzip icons.zip
 # install usbreset.c
 echo -e "${Cyan}Installing and compiling usbreset.c...${NC}"
 cd ~/
-cp ~/VAN_PI/VanPi-Core-OS/misc/usbreset.c .
+cp ~/VAN_PI/VanPi-Core-OS-Beta/misc/usbreset.c .
 sudo gcc usbreset.c -o usbreset
 sudo mv usbreset /usr/local/sbin/
 
@@ -276,7 +276,7 @@ sudo mv usbreset /usr/local/sbin/
 # install and configure Nginx
 echo -e "${Cyan}Installing and configuring Nginx${NC}"
 sudo apt update && sudo apt install nginx -y
-sudo cp ~/VAN_PI/VanPi-Core-OS/nginx/pekaway1 /etc/nginx/sites-available/pekaway1
+sudo cp ~/VAN_PI/VanPi-Core-OS-Beta/nginx/pekaway1 /etc/nginx/sites-available/pekaway1
 sudo ln -s /etc/nginx/sites-available/pekaway1 /etc/nginx/sites-enabled/
 # remove the "default_server" statement fomr the default server block
 sudo sed -i 's/default_server//g' /etc/nginx/sites-available/default
@@ -311,7 +311,7 @@ fi
 
 # implementing new udev rules and restarting udev service
 echo -e "${Cyan}Implementing udev rules for serial connections{NC}"
-sudo mv ~/VAN_PI/VanPi-Core-OS/misc/98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules;
+sudo mv ~/VAN_PI/VanPi-Core-OS-Beta/misc/98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules;
 sudo udevadm control --reload-rules & sudo systemctl restart udev.service
 
 # install Homebridge
@@ -321,7 +321,7 @@ sudo apt install homebridge
 echo -e "${Cyan}Installing Mqttthing for Homebridge${NC}"
 sudo -E -n npm install -g homebridge-mqttthing@latest
 cd ~/pekaway
-sudo cp -r ~/VAN_PI/VanPi-Core-OS/homebridge/config.json /var/lib/homebridge/config.json
+sudo cp -r ~/VAN_PI/VanPi-Core-OS-Beta/homebridge/config.json /var/lib/homebridge/config.json
 
 # install Zigbee2MQTT
 echo -e "${Cyan}Installing Zigbee2MQTT${NC}"
@@ -332,8 +332,8 @@ git clone --depth 1 https://github.com/Koenkk/zigbee2mqtt.git /opt/zigbee2mqtt
 cd /opt/zigbee2mqtt && npm ci
 echo -e "${Cyan}Downloading config files for Zigbee2MQTT${NC}"
 cd ~/pekaway
-sudo cp -r ~/VAN_PI/VanPi-Core-OS/zigbee/configuration.yaml /opt/zigbee2mqtt/data/configuration.yaml
-sudo cp -r ~/VAN_PI/VanPi-Core-OS/zigbee/zigbee2mqtt.service /etc/systemd/system/
+sudo cp -r ~/VAN_PI/VanPi-Core-OS-Beta/zigbee/configuration.yaml /opt/zigbee2mqtt/data/configuration.yaml
+sudo cp -r ~/VAN_PI/VanPi-Core-OS-Beta/zigbee/zigbee2mqtt.service /etc/systemd/system/
 
 # Intalling powersave mode systemd service for wifi connection 
 echo "Installing powersave mode for wifi connection"
@@ -385,14 +385,14 @@ fi
 
 # get and move tft files for NSPanel and touchdisplay to the correct destination
 echo -e "${Cyan}Downloading .tft files for NSPanel and Pekaway Touchdisplay${NC}"
-mv ~/VAN_PI/VanPi-Core-OS/data/userdata/NSPanel/VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL.tft
-mv ~/VAN_PI/VanPi-Core-OS/data/userdata/NSPanel/autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be
+mv ~/VAN_PI/VanPi-Core-OS-Beta/data/userdata/NSPanel/VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL.tft
+mv ~/VAN_PI/VanPi-Core-OS-Beta/data/userdata/NSPanel/autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be
 sudo rm /boot/*.tft
-sudo chown root:root ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft # cannot preserve ownership in root directory
-sudo mv ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft /boot/PekawayTouch.tft
+sudo chown root:root ~/VAN_PI/VanPi-Core-OS-Beta/touchdisplay/PekawayTouch.tft # cannot preserve ownership in root directory
+sudo mv ~/VAN_PI/VanPi-Core-OS-Beta/touchdisplay/PekawayTouch.tft /boot/PekawayTouch.tft
 
 # move the original pythonsqlite.db file to the correct location
-mv ~/VAN_PI/VanPi-Core-OS/misc/pythonsqlite.db ~/pekaway/pythonsqlite.db
+mv ~/VAN_PI/VanPi-Core-OS-Beta/misc/pythonsqlite.db ~/pekaway/pythonsqlite.db
 
 ## create the initial Hotspot.nmconnection file
 echo -e "${Cyan}Creating the initial Hotspot.nmconnection file${NC}"

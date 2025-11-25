@@ -33,6 +33,34 @@ VersionToCheck='v2.0.0' # Version that has relevant changes in update script
 # (if current version number is below that number than this script will execute without the need for confirmation)
 # (script will not ask for confirmation if started from Node-RED dashboard directly)
 
+
+# truncate log folder to make space
+# 1) Trim big logs first
+# 2) If still almost full, aggressively trim the largest files
+# 3) Try to rotate logs (best effort)
+
+echo "checking space in log folder..."
+
+sudo bash -c '
+find /var/log -type f -size +2M -exec truncate -s 0 {} \;
+
+usage=$(df --output=pcent /var/log | tail -n1 | tr -dc "0-9")
+if [ "$usage" -ge 98 ]; then
+  echo "/var/log still at ${usage}%, trimming largest files..."
+  # take top 5 largest files and truncate them
+  find /var/log -type f -printf "%s %p\n" \
+    | sort -nr \
+    | head -n 5 \
+    | awk "{print \$2}" \
+    | while read -r f; do
+        truncate -s 0 "$f" || true
+      done
+fi
+
+logrotate -f /etc/logrotate.conf || true
+'
+echo "done, starting real update"
+
 # create file for progressbar in NR dashboard
 Progress=/var/log/pekaway-update_progress.log
 sudo truncate -s 0 ${Progress}

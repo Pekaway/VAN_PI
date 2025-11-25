@@ -34,6 +34,7 @@ build-essential
 busybox
 bzip2
 ca-certificates
+can-utils
 cifs-utils
 console-setup
 console-setup-linux

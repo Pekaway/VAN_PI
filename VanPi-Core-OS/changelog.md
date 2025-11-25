@@ -1,3 +1,28 @@
+# Update 2.0.9 (25. Nov. 2025)
+- rewrote function that prevents Maxxfan from going into "auto" on power off
+- added In-Out-X relays as options for Boiler Relay
+- changed /etc/fstab to boot from SD-card reliably (if SD-card is present)
+- rewrote function to hide/show generic Heater/Truma/Maxxfan/Bayernlüfter
+- added function to use Relays 1-8 as "software-relays" to trigger a custom flow if set (see examples flow)
+- changed the scan BLE function to show BLE devices names more reliably
+- added In-Out-X & Dimmy Pro stats to mqtt api request
+- changed JBD/BMS to set global variables to 0 if connection is lost-
+- changed function to set baudrate for RJ45 GPS/Touchdisplay
+- fixed Dimmy Pro link in nodes (coming from display)
+- fixed mcp inputs to set button or switch on init for In-Out-X
+- fixed constantly triggering a change event and change to devices tab when addind new temp sensors in dashboard
+- fixed ui_scheduler setting settemp to 0 when turning off heater on schedule for autoerm & generic heater
+- removed excluding .json files from userdata backup
+- changed Ruuvitags functions to save battery values and send to app
+- added functions to send custom data/relays/dimmers to app (see examples flow)
+- added http endpoints for boiler + Dometic RC10 for app
+- added Dometic RC10 to ci2mqtt brigde and added respective dashboard nodes
+    - changed http and mqtt to send data to the app respectively
+- added a new http endpoint for LTE bridge to display current state and send state to app
+    - introduced a re-init of the wifi AP if bridge is lost
+- added new functions to overwrite ADC level values with temp values using 10k NTC temp sensors
+    - added new 10k NTC temp sensors to be used as values for boiler, temp automations, inside/ambient temp sensor and heaters
+
 # Update 2.0.8 (26. Aug. 2025)
 - added functions to support a seperate scheduler for Truma CI water
     - includes options to choose between "eco" and "hot" mode

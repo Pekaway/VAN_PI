@@ -79,3 +79,7 @@ hdmi_blanking=2
 dtoverlay=w1-gpio,gpiopin=20
 # copy act led to external led on Van Pi Core board
 dtoverlay=gpio-led,gpio=22,label=vpicore_act_led,trigger=heartbeat
+# activate CAN interface
+dtparam=spi=on
+dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25
+dtoverlay=spi-bcm2835

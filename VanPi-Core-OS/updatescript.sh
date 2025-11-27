@@ -681,6 +681,10 @@ jq '
 $tabs + $nodes + $groups + $ui_tabs
 ' ~/.node-red/flows_pekaway.json > ~/.node-red/extracted_user_flows.json
 
+echo "Extracting *-config nodes from flows_pekaway.json to extracted_config_flows.json in NR folder"
+jq '[ .[] | select(.type | type == "string" and endswith("-config")) ]' \
+  ~/.node-red/flows_pekaway.json > ~/.node-red/extracted_config_flows.json
+
 cp ~/.node-red/flows_pekaway.json ~/.node-red/.flows_pekaway.json.bkp
 
 # Download new flows and replace the old file
@@ -719,15 +723,47 @@ else
     exit 1
 fi
 
-# Merge flows_pekaway.json with extracted_user_flows.json and save to merged_flows.json
-echo "Merging flows_pekaway.json and extracted_user_flows.json, saving as merged_flows.json"
-if [ -s ~/.node-red/extracted_user_flows.json ] && jq empty ~/.node-red/extracted_user_flows.json >/dev/null 2>&1; then
-    jq -s '[.[0][] , .[1][]]' ~/.node-red/flows_pekaway.json ~/.node-red/extracted_user_flows.json > ~/.node-red/merged_flows.json &&
-    rm ~/.node-red/flows_pekaway.json ~/.node-red/extracted_user_flows.json &&
+# Merge flows_pekaway.json with extracted_user_flows.json AND extracted_config_flows.json
+echo "Merging flows_pekaway.json with extracted_user_flows.json and extracted_config_flows.json, saving as merged_flows.json"
+
+# Ensure extracted files are valid JSON (arrays, possibly empty)
+if jq empty ~/.node-red/extracted_user_flows.json >/dev/null 2>&1 && \
+   jq empty ~/.node-red/extracted_config_flows.json >/dev/null 2>&1; then
+
+    # We pass FOUR files into jq:
+    # 0: new flows (already downloaded & copied)
+    # 1: extracted user flows from old file
+    # 2: extracted *-config nodes from old file
+    # 3: backup of old flows (for ordering only)
+    jq -s '
+      # $all[0] = new flows
+      # $all[1] = userflows_old
+      # $all[2] = configs_old
+      # $all[3] = old_backup (ordering template)
+
+      . as $all
+      | ($all[0] + $all[1] + $all[2]) as $combined
+      | $combined
+      | unique_by(.id)                             # NEW flows win (they are first in +)
+      as $union
+      | ($all[3] | map(.id)) as $old_ids          # id order from backup
+      | $union
+      | sort_by(
+          (.id as $id
+           | ($old_ids | index($id)) // 100000000 # old order if known, else big number (end)
+          )
+        )
+    ' \
+      ~/.node-red/flows_pekaway.json \
+      ~/.node-red/extracted_user_flows.json \
+      ~/.node-red/extracted_config_flows.json \
+      ~/.node-red/.flows_pekaway.json.bkp \
+      > ~/.node-red/merged_flows.json && \
+    rm ~/.node-red/flows_pekaway.json ~/.node-red/extracted_user_flows.json ~/.node-red/extracted_config_flows.json && \
     mv ~/.node-red/merged_flows.json ~/.node-red/flows_pekaway.json
 else
-    echo "No valid user flows to merge. Skipping merging."
-    rm -f ~/.node-red/extracted_user_flows.json  # Clean up even if it's empty
+    echo "Warning: extracted_user_flows.json or extracted_config_flows.json is not valid JSON. Skipping merge."
+    rm -f ~/.node-red/extracted_user_flows.json ~/.node-red/extracted_config_flows.json
 fi
 
 

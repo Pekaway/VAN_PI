@@ -312,13 +312,13 @@ do
 	touch ~/pekaway/mcpinput"$i"_type
 	relays=$(cat < ~/pekaway/mcpinput"$i" |  jq 'has("relays")')
 	dimmers=$(cat < ~/pekaway/mcpinput"$i" |  jq 'has("dimmers")')
-	type=$(cat ~/pekaway/mcpinput"$i"_type)
+	read -r type < ~/pekaway/mcpinput"$i"_type
 	echo "Relays$i: $relays"
 	echo "Dimmers$i: $dimmers"
 	echo "Type$i: $type"
 	if [[ "$type" != "switch" && "$type" != "button" ]]; then
-		echo 'switch' > ~/pekaway/mcpinput"$i"_type
-	fi
+	    echo 'button' > ~/pekaway/mcpinput"$i"_type
+    fi
 	if [[ "$relays" == "true" ]] 
 	then
 		if [[ "$dimmers" != "true" ]]; then	

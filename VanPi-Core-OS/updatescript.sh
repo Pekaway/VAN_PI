@@ -604,12 +604,63 @@ cp ~/.node-red/flows_pekaway.json "flows_pekaway_$(date +%d-%m-%Y_%I:%M:%S%p).js
 # Define the path to the Node-RED settings.js file
 NR_SETTINGS_FILE="$HOME/.node-red/settings.js"
 
-# Define the desired global context key-value pairs
-declare -A GLOBAL_CONTEXT=(
-    ["zlib"]="require('zlib')"
-    #["os"]="require('os')"
-    # Add more key-value pairs as needed
-)
+enable_context_storage() {
+    local settings_file="$1"
+
+    if grep -q '^    //contextStorage: {' "$settings_file"; then
+        sed -i '/^    \/\/contextStorage: {$/, /^    \/\/},$/c\
+    contextStorage: {\
+        default: {\
+            module:"localfilesystem"\
+        },\
+    },' "$settings_file"
+    fi
+}
+
+normalize_function_global_context() {
+    local settings_file="$1"
+    local tmp_file
+
+    tmp_file="$(mktemp)"
+
+    if awk -f - "$settings_file" > "$tmp_file" <<'AWK'
+BEGIN {
+    in_fgc = 0
+    fgc_indent = ""
+}
+
+{
+    if (!in_fgc && $0 ~ /^[[:space:]]*functionGlobalContext:[[:space:]]*\{[[:space:]]*$/) {
+        match($0, /^[[:space:]]*/)
+        fgc_indent = substr($0, 1, RLENGTH)
+        in_fgc = 1
+        print
+        next
+    }
+
+    if (in_fgc) {
+        if ($0 ~ /^[[:space:]]*\},[[:space:]]*$/) {
+            print fgc_indent "    zlib:require('zlib'),"
+            print
+            in_fgc = 0
+            next
+        }
+
+        if ($0 ~ /^[[:space:]]*(\/\/[[:space:]]*)?zlib:[[:space:]]*require\('zlib'\)[[:space:]]*,?[[:space:]]*$/) {
+            next
+        }
+    }
+
+    print
+}
+AWK
+    then
+        mv "$tmp_file" "$settings_file"
+    else
+        rm -f "$tmp_file"
+        return 1
+    fi
+}
 
 # Check if the settings.js file exists
 if [ ! -f "$NR_SETTINGS_FILE" ]; then
@@ -617,39 +668,19 @@ if [ ! -f "$NR_SETTINGS_FILE" ]; then
     exit 1
 fi
 
-# Check if functionGlobalContext exists
-if grep -q "functionGlobalContext:" "$NR_SETTINGS_FILE"; then
+enable_context_storage "$NR_SETTINGS_FILE"
+
+if grep -q "^[[:space:]]*functionGlobalContext:" "$NR_SETTINGS_FILE"; then
     echo "Found functionGlobalContext in settings.js."
-
-    # Loop through desired global context entries
-    for KEY in "${!GLOBAL_CONTEXT[@]}"; do
-        VALUE=${GLOBAL_CONTEXT[$KEY]}
-
-        # Check if the key already exists and is uncommented
-        if grep -q "^    $KEY:$VALUE" "$NR_SETTINGS_FILE"; then
-            echo "$KEY is already included in functionGlobalContext and uncommented."
-        # Check if the key exists but is commented out
-        elif grep -q "^ *// *$KEY:$VALUE" "$NR_SETTINGS_FILE"; then
-            echo "$KEY is commented out. Uncommenting it..."
-            sed -i "s|^ *// *$KEY:$VALUE|    $KEY:$VALUE|" "$NR_SETTINGS_FILE"
-            echo "$KEY uncommented."
-        else
-            echo "$KEY is missing. Adding it to functionGlobalContext..."
-
-            # Insert the key-value pair into functionGlobalContext
-            sed -i "/functionGlobalContext:/,/}/ s|}|    $KEY:$VALUE,\n}|" "$NR_SETTINGS_FILE"
-
-            echo "$KEY added to functionGlobalContext."
-        fi
-    done
+    echo "Ensuring zlib is present exactly once in functionGlobalContext..."
+    normalize_function_global_context "$NR_SETTINGS_FILE"
+    echo "functionGlobalContext normalized."
 else
     echo "functionGlobalContext not found. Adding it with the desired entries..."
 
     # Build the functionGlobalContext block dynamically
     CONTEXT_BLOCK="functionGlobalContext: {\n"
-    for KEY in "${!GLOBAL_CONTEXT[@]}"; do
-        CONTEXT_BLOCK+="    $KEY:${GLOBAL_CONTEXT[$KEY]},\n"
-    done
+    CONTEXT_BLOCK+="    zlib:require('zlib'),\n"
     CONTEXT_BLOCK+="},"
 
     # Add the block at the end of the file

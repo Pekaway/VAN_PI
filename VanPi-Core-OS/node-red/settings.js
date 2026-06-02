@@ -299,7 +299,7 @@ module.exports = {
              * trace - record very detailed logging + debug + info + warn + error + fatal errors
              * off - turn off all logging (doesn't affect metrics or audit)
              */
-            level: "info",
+            level: "error",
             /** Whether or not to include metric events in the log output */
             metrics: false,
             /** Whether or not to include audit events in the log output */
@@ -478,14 +478,16 @@ module.exports = {
     /** The following property can be used to set predefined values in Global Context.
      * This allows extra node modules to be made available with in Function node.
      * For example, the following:
-     *    functionGlobalContext: { os:require('os') }
+     *    functionGlobalContext: { os:require('os')     zlib:require('zlib'),
+}
      * will allow the `os` module to be accessed in a Function node using:
      *    global.get("os")
      */
     functionGlobalContext: {
         // os:require('os'),
 	zlib:require('zlib'),
-    },
+        zlib:require('zlib'),
+},
 
     /** The maximum number of messages nodes will buffer internally as part of their
      * operation. This applies across a range of nodes that operate on message sequences.

@@ -443,6 +443,47 @@ echo -e "${Cyan}Configuring cmdline.txt...${NC}"
 sudo sed -i 's/^.*root=PARTUUID/root=PARTUUID/' /boot/firmware/cmdline.txt
 sed -i 's/flows.json/flows_pekaway.json/g' ~/.node-red/settings.js
 sed -i 's/theme: "",/theme: "",\n        header: {\n            title: "Pekaway VAN PI Campercontrol",\n        },/g' ~/.node-red/settings.js
+
+if grep -q '^    //contextStorage: {' ~/.node-red/settings.js; then
+    sed -i '/^    \/\/contextStorage: {$/, /^    \/\/},$/c\
+    contextStorage: {\
+        default: {\
+            module:"localfilesystem"\
+        },\
+    },' ~/.node-red/settings.js
+fi
+
+awk -f - ~/.node-red/settings.js > ~/.node-red/settings.js.tmp <<'AWK'
+BEGIN {
+    in_fgc = 0
+    fgc_indent = ""
+}
+{
+    if (!in_fgc && $0 ~ /^[[:space:]]*functionGlobalContext:[[:space:]]*\{[[:space:]]*$/) {
+        match($0, /^[[:space:]]*/)
+        fgc_indent = substr($0, 1, RLENGTH)
+        in_fgc = 1
+        print
+        next
+    }
+
+    if (in_fgc) {
+        if ($0 ~ /^[[:space:]]*\},[[:space:]]*$/) {
+            print fgc_indent "    zlib:require('zlib'),"
+            print
+            in_fgc = 0
+            next
+        }
+
+        if ($0 ~ /^[[:space:]]*(\/\/[[:space:]]*)?zlib:[[:space:]]*require\('zlib'\)[[:space:]]*,?[[:space:]]*$/) {
+            next
+        }
+    }
+
+    print
+}
+AWK
+mv ~/.node-red/settings.js.tmp ~/.node-red/settings.js
 sudo systemctl restart nodered.service
 
 # Clean up unnecessary package files to free space

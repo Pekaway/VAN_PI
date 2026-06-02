@@ -1,3 +1,17 @@
+# Update 2.0.10 (02. June 2026)
+- changed Dimmy and DimmyPro sampling frequency from 200 to 800
+- sanitized values in function that sends current values/data to touchdisplay
+- added timberline integration in CAN/RVC
+- adjusted API for new timberline integration
+- adjusted API for new Pekaway Connect update v1.1.0
+- fixed functions for RuuviTags to support both 3in1 and 4in1
+- adjusted function for Pekaway Wireless shunt to support Shunt v2 (shunt needs to be updated!)
+- added example functions that explain how to send custom push-notifications to the app (router and LTE bridge)
+- added PID 0xC038 for VE SmartShunt
+- fixed wrong DimmyPro assignment by Switch Scheduler
+- setting the name of any relay, w-relay or dimmer to "-" will now hide it in the Pekaway Connect app
+- smaller bugfixes
+
 # Update 2.0.9 (25. Nov. 2025)
 - rewrote function that prevents Maxxfan from going into "auto" on power off
 - added In-Out-X relays as options for Boiler Relay

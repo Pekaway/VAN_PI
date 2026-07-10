@@ -613,9 +613,11 @@ enable_context_storage() {
     if awk -f - "$settings_file" > "$tmp_file" <<'AWK'
 BEGIN {
     in_context_storage = 0
+    context_storage_depth = 0
     found_context_storage = 0
     inserted_context_storage = 0
     context_storage_indent = ""
+    possible_duplicate_context_closer = 0
 }
 
 function emit_context_storage(indent) {
@@ -634,16 +636,36 @@ function emit_context_storage(indent) {
         match($0, /^[[:space:]]*/)
         context_storage_indent = substr($0, 1, RLENGTH)
         in_context_storage = 1
+        context_storage_depth = 1
         found_context_storage = 1
         emit_context_storage(context_storage_indent)
         next
     }
 
     if (in_context_storage) {
-        if ($0 ~ /^[[:space:]]*(\/\/[[:space:]]*)?\},[[:space:]]*$/) {
+        context_storage_line = $0
+        sub(/^[[:space:]]*\/\/[[:space:]]*/, "", context_storage_line)
+        context_storage_depth += gsub(/\{/, "{", context_storage_line)
+        context_storage_depth -= gsub(/\}/, "}", context_storage_line)
+
+        if (context_storage_depth == 0) {
             in_context_storage = 0
+            possible_duplicate_context_closer = 1
         }
         next
+    }
+
+    if (possible_duplicate_context_closer) {
+        context_storage_line = $0
+        sub(/^[[:space:]]*/, "", context_storage_line)
+
+        match($0, /^[[:space:]]*/)
+        if (substr($0, 1, RLENGTH) == context_storage_indent && context_storage_line ~ /^\},[[:space:]]*$/) {
+            possible_duplicate_context_closer = 0
+            next
+        }
+
+        possible_duplicate_context_closer = 0
     }
 
     if (!found_context_storage && !inserted_context_storage && $0 ~ /^[[:space:]]*(exportGlobalContextKeys:|externalModules:)/) {

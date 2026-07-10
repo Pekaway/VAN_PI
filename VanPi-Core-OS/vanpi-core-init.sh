@@ -444,13 +444,58 @@ sudo sed -i 's/^.*root=PARTUUID/root=PARTUUID/' /boot/firmware/cmdline.txt
 sed -i 's/flows.json/flows_pekaway.json/g' ~/.node-red/settings.js
 sed -i 's/theme: "",/theme: "",\n        header: {\n            title: "Pekaway VAN PI Campercontrol",\n        },/g' ~/.node-red/settings.js
 
-if grep -q '^    //contextStorage: {' ~/.node-red/settings.js; then
-    sed -i '/^    \/\/contextStorage: {$/, /^    \/\/},$/c\
-    contextStorage: {\
-        default: {\
-            module:"localfilesystem"\
-        },\
-    },' ~/.node-red/settings.js
+tmp_file="$(mktemp)"
+if awk -f - ~/.node-red/settings.js > "$tmp_file" <<'AWK'
+BEGIN {
+    in_context_storage = 0
+    found_context_storage = 0
+    inserted_context_storage = 0
+    context_storage_indent = ""
+}
+
+function emit_context_storage(indent) {
+    print indent "contextStorage: {"
+    print indent "    default: {"
+    print indent "        module:\"localfilesystem\","
+    print indent "        config: {"
+    print indent "            flushInterval: 3600"
+    print indent "        }"
+    print indent "    }"
+    print indent "},"
+}
+
+{
+    if (!in_context_storage && $0 ~ /^[[:space:]]*(\/\/[[:space:]]*)?contextStorage:[[:space:]]*\{[[:space:]]*$/) {
+        match($0, /^[[:space:]]*/)
+        context_storage_indent = substr($0, 1, RLENGTH)
+        in_context_storage = 1
+        found_context_storage = 1
+        emit_context_storage(context_storage_indent)
+        next
+    }
+
+    if (in_context_storage) {
+        if ($0 ~ /^[[:space:]]*(\/\/[[:space:]]*)?\},[[:space:]]*$/) {
+            in_context_storage = 0
+        }
+        next
+    }
+
+    if (!found_context_storage && !inserted_context_storage && $0 ~ /^[[:space:]]*(exportGlobalContextKeys:|externalModules:)/) {
+        match($0, /^[[:space:]]*/)
+        context_storage_indent = substr($0, 1, RLENGTH)
+        emit_context_storage(context_storage_indent)
+        inserted_context_storage = 1
+    }
+
+    print
+}
+AWK
+then
+    mv "$tmp_file" ~/.node-red/settings.js
+else
+    rm -f "$tmp_file"
+    exit 1
 fi
 
 awk -f - ~/.node-red/settings.js > ~/.node-red/settings.js.tmp <<'AWK'

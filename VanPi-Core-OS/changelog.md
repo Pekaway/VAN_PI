@@ -1,3 +1,30 @@
+# Update 2.1.0 (10 July 2026)
+- reworked the VE.direct flow
+    - supports usage of multiple MPPTs simultanously
+    - delivers more data values from the shunt
+    - added devices: 0xA080 (SmartSolar MPPT 100/20 rev3), 0xA081 (SmartSolar MPPT 100/20 48V rev3), 0xA381 (BMV-712 Smart), 0xA382 (BMV-710H Smart), 0xA383 (BMV-702 Smart), 0xA389 (SmartShunt 500A/50mV), 0xA38A (SmartShunt 1000A/50mV), 0xA38B (SmartShunt 2000A/50mV)
+- adjusted API to support multiple MPPTs in Pekaway Connect
+- adjusted API to support VE.Direct Shunt details in Pekaway Connect
+- adjusted API to return pv daily yield to Pekaway Connect
+- adjusted Custom Data for app to support nested JS objects (see example functions > custom data)
+- enabled contextStorage in settings.js with flushInterval at 1h
+- fixed a problem with showing/hiding CAN-bus devices (timberline) on startup
+- fixed a problem with showing/hiding Dometic RC10 on startup
+- added the smartboil controller to be controlled via MQTT
+- made smartboil controller available for usage through existing touchdisplay boiler control page
+- added smartboil controls to API for Pekaway Connect app
+    - Hint: smartboil and "normal" boiler control are two different things and act seperately from each other! make sure to configure the correct controller (in dashboard)
+    - smartboil = Pekaway SmartBoil (seperate hardware device with wifi connection); boiler control = software boiler control native to VanPi OS
+- added an option to always shut down the connected heater in the boiler controls (not smartboil) for emergency cases
+- reworked bleMppt.py to keep connection more stable, adjusted mppt flow to save additional data in variable
+- adjusted API to return additional data for Pekaway Connect app
+- disabled the automatic 20min BLE restart interval
+- changed the function that reads the first 4 DS18B20 temp sensors to reduce noise/disturbances:
+    - "N/A" will only be written to the global variables if the expected sensor did not respond with a value for 6 consecutive times
+    - If "N/A" comes in (less than 6 times), the newest valid value will be kept
+- changed functions for temp automations, so that also In-Out-X Relays can be configured properly
+- changed functions to read stored timestamps from LTE bridge update more defensively to prevent function errrors
+
 # Update 2.0.10 (02. June 2026)
 - changed Dimmy and DimmyPro sampling frequency from 200 to 800
 - sanitized values in function that sends current values/data to touchdisplay

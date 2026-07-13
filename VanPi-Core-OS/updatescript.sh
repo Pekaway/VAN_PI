@@ -610,76 +610,116 @@ enable_context_storage() {
 
     tmp_file="$(mktemp)"
 
-    if awk -f - "$settings_file" > "$tmp_file" <<'AWK'
-BEGIN {
-    in_context_storage = 0
-    context_storage_depth = 0
-    found_context_storage = 0
-    inserted_context_storage = 0
-    context_storage_indent = ""
-    possible_duplicate_context_closer = 0
-}
+    if python3 - "$settings_file" "$tmp_file" <<'PY'
+import re
+import sys
+from pathlib import Path
 
-function emit_context_storage(indent) {
-    print indent "contextStorage: {"
-    print indent "    default: {"
-    print indent "        module:\"localfilesystem\","
-    print indent "        config: {"
-    print indent "            flushInterval: 3600"
-    print indent "        }"
-    print indent "    }"
-    print indent "},"
-}
+settings_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
 
-{
-    if (!in_context_storage && $0 ~ /^[[:space:]]*(\/\/[[:space:]]*)?contextStorage:[[:space:]]*\{[[:space:]]*$/) {
-        match($0, /^[[:space:]]*/)
-        context_storage_indent = substr($0, 1, RLENGTH)
-        in_context_storage = 1
-        context_storage_depth = 1
-        found_context_storage = 1
-        emit_context_storage(context_storage_indent)
-        next
-    }
+lines = settings_path.read_text().splitlines(True)
 
-    if (in_context_storage) {
-        context_storage_line = $0
-        sub(/^[[:space:]]*\/\/[[:space:]]*/, "", context_storage_line)
-        context_storage_depth += gsub(/\{/, "{", context_storage_line)
-        context_storage_depth -= gsub(/\}/, "}", context_storage_line)
+context_start_re = re.compile(r'^([ \t]*)(?://[ \t]*)?contextStorage:[ \t]*\{[ \t]*$')
+flush_re = re.compile(r'^([ \t]*)(?://[ \t]*)?flushInterval:[ \t]*([0-9]+)([ \t]*,?[ \t]*)$')
+insertion_re = re.compile(r'^[ \t]*(exportGlobalContextKeys:|externalModules:)')
 
-        if (context_storage_depth == 0) {
-            in_context_storage = 0
-            possible_duplicate_context_closer = 1
-        }
-        next
-    }
 
-    if (possible_duplicate_context_closer) {
-        context_storage_line = $0
-        sub(/^[[:space:]]*/, "", context_storage_line)
+def brace_delta(line: str) -> int:
+    stripped = re.sub(r'^[ \t]*//[ \t]*', '', line)
+    return stripped.count('{') - stripped.count('}')
 
-        match($0, /^[[:space:]]*/)
-        if (substr($0, 1, RLENGTH) == context_storage_indent && context_storage_line ~ /^\},[[:space:]]*$/) {
-            possible_duplicate_context_closer = 0
-            next
-        }
 
-        possible_duplicate_context_closer = 0
-    }
+def is_commented(line: str) -> bool:
+    return re.match(r'^[ \t]*//', line) is not None
 
-    if (!found_context_storage && !inserted_context_storage && $0 ~ /^[[:space:]]*(exportGlobalContextKeys:|externalModules:)/) {
-        match($0, /^[[:space:]]*/)
-        context_storage_indent = substr($0, 1, RLENGTH)
-        emit_context_storage(context_storage_indent)
-        inserted_context_storage = 1
-    }
 
-    print
-}
-AWK
+def emit_context_storage(indent: str) -> list[str]:
+    return [
+        f"{indent}contextStorage: {{\n",
+        f"{indent}    default: {{\n",
+        f"{indent}        module:\"localfilesystem\",\n",
+        f"{indent}        config: {{\n",
+        f"{indent}            flushInterval: 3600\n",
+        f"{indent}        }}\n",
+        f"{indent}    }}\n",
+        f"{indent}}},\n",
+    ]
+
+
+out = []
+i = 0
+seen_context_storage = False
+inserted_context_storage = False
+
+while i < len(lines):
+    line = lines[i]
+    start_match = context_start_re.match(line)
+
+    if start_match:
+        seen_context_storage = True
+        indent = start_match.group(1)
+        commented_start = is_commented(line)
+
+        block = [line]
+        depth = 1
+        j = i + 1
+        while j < len(lines) and depth > 0:
+            block_line = lines[j]
+            block.append(block_line)
+            depth += brace_delta(block_line)
+            j += 1
+
+        if depth != 0:
+            raise SystemExit("unbalanced braces in contextStorage block")
+
+        flush_indices = []
+        flush_value = None
+        flush_indent = ""
+        for idx, block_line in enumerate(block):
+            flush_match = flush_re.match(re.sub(r'^[ \t]*//[ \t]*', '', block_line))
+            if flush_match:
+                flush_indices.append(idx)
+                if flush_value is None:
+                    flush_value = flush_match.group(3)
+                    flush_indent = flush_match.group(1)
+
+        if commented_start:
+            out.extend(emit_context_storage(indent))
+        elif len(flush_indices) == 1 and flush_value == "3600":
+            out.extend(block)
+        elif len(flush_indices) == 1:
+            updated_block = list(block)
+            suffix = flush_match.group(3) if flush_match else ""
+            updated_block[flush_indices[0]] = f"{flush_indent}flushInterval: 3600{suffix}\n"
+            out.extend(updated_block)
+        else:
+            out.extend(emit_context_storage(indent))
+
+        i = j
+        continue
+
+    if not seen_context_storage and not inserted_context_storage and insertion_re.match(line):
+        indent_match = re.match(r'^([ \t]*)', line)
+        indent = indent_match.group(1) if indent_match else ""
+        out.extend(emit_context_storage(indent))
+        inserted_context_storage = True
+
+    out.append(line)
+    i += 1
+
+if not seen_context_storage and not inserted_context_storage:
+    raise SystemExit("could not locate an insertion point for contextStorage")
+
+output_path.write_text("".join(out))
+PY
     then
-        mv "$tmp_file" "$settings_file"
+        if node --check "$tmp_file" >/dev/null 2>&1; then
+            mv "$tmp_file" "$settings_file"
+        else
+            rm -f "$tmp_file"
+            return 1
+        fi
     else
         rm -f "$tmp_file"
         return 1
@@ -731,18 +771,37 @@ AWK
     fi
 }
 
+validate_nr_settings() {
+    local settings_file="$1"
+
+    node --check "$settings_file" >/dev/null 2>&1
+}
+
 # Check if the settings.js file exists
 if [ ! -f "$NR_SETTINGS_FILE" ]; then
     echo "The settings.js file does not exist at $NR_SETTINGS_FILE. Exiting."
     exit 1
 fi
 
-enable_context_storage "$NR_SETTINGS_FILE"
+NR_SETTINGS_BACKUP="$(mktemp)"
+cp -p "$NR_SETTINGS_FILE" "$NR_SETTINGS_BACKUP"
+
+if ! enable_context_storage "$NR_SETTINGS_FILE"; then
+    echo "Failed to update contextStorage in settings.js. Restoring original file and aborting..."
+    cp -p "$NR_SETTINGS_BACKUP" "$NR_SETTINGS_FILE"
+    rm -f "$NR_SETTINGS_BACKUP"
+    exit 1
+fi
 
 if grep -q "^[[:space:]]*functionGlobalContext:" "$NR_SETTINGS_FILE"; then
     echo "Found functionGlobalContext in settings.js."
     echo "Ensuring zlib is present exactly once in functionGlobalContext..."
-    normalize_function_global_context "$NR_SETTINGS_FILE"
+    if ! normalize_function_global_context "$NR_SETTINGS_FILE"; then
+        echo "Failed to normalize functionGlobalContext. Restoring original file and aborting..."
+        cp -p "$NR_SETTINGS_BACKUP" "$NR_SETTINGS_FILE"
+        rm -f "$NR_SETTINGS_BACKUP"
+        exit 1
+    fi
     echo "functionGlobalContext normalized."
 else
     echo "functionGlobalContext not found. Adding it with the desired entries..."
@@ -757,6 +816,15 @@ else
 
     echo "functionGlobalContext added with the desired entries."
 fi
+
+if ! validate_nr_settings "$NR_SETTINGS_FILE"; then
+    echo "settings.js failed syntax validation after updates. Restoring original file and aborting..."
+    cp -p "$NR_SETTINGS_BACKUP" "$NR_SETTINGS_FILE"
+    rm -f "$NR_SETTINGS_BACKUP"
+    exit 1
+fi
+
+rm -f "$NR_SETTINGS_BACKUP"
 
 
 # extract user flows from original flows.json file

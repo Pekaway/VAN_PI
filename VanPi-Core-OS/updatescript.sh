@@ -608,7 +608,7 @@ enable_context_storage() {
     local settings_file="$1"
     local tmp_file
 
-    tmp_file="$(mktemp)"
+    tmp_file="$(mktemp /tmp/contextStorage.XXXXXX.js)"
 
     if python3 - "$settings_file" "$tmp_file" <<'PY'
 import re
@@ -730,7 +730,7 @@ normalize_function_global_context() {
     local settings_file="$1"
     local tmp_file
 
-    tmp_file="$(mktemp)"
+    tmp_file="$(mktemp /tmp/functionGlobalContext.XXXXXX.js)"
 
     if awk -f - "$settings_file" > "$tmp_file" <<'AWK'
 BEGIN {

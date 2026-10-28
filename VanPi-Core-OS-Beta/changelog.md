@@ -1,3 +1,92 @@
+#Update 2.1.1 beta (Oct 2026)
+- reworked Autoterm 2D/4D
+    - improved heater control in temperature mode
+    - added automatic burn-off mode with timer based on operating hours
+    - added Twin Boost Start
+    - added heating pause when target temperature is reached
+- added Autoterm 5D template
+- reworked Inputs
+    - added RGBW Control
+    - added Power Unit Control
+    - added Heater Control
+    - added Dual Mode (Short/Long Press)
+- added Power Unit ULTRA
+- added Air Path Solutions Control
+- added Webasto Air Heater
+- fixed an issue with showing/hiding Timberline in Heater
+- fixed an issue with showing/hiding Dometic RC10 in Devices
+- new Display Version 2.1.0
+- added automatic Display Update and Rotation functions (Debug/Display)
+- fixed Core Pro Position Sensor BMI270
+
+# Update 2.1.0 (June 2026)
+- reworked the VE.direct flow
+    - supports usage of multiple MPPTs simultanously
+    - delivers more data values from the shunt
+    - added devices: 0xA080 (SmartSolar MPPT 100/20 rev3), 0xA081 (SmartSolar MPPT 100/20 48V rev3), 0xA381 (BMV-712 Smart), 0xA382 (BMV-710H Smart), 0xA383 (BMV-702 Smart), 0xA389 (SmartShunt 500A/50mV), 0xA38A (SmartShunt 1000A/50mV), 0xA38B (SmartShunt 2000A/50mV)
+- adjusted API to support multiple MPPTs in Pekaway Connect
+- adjusted API to support VE.Direct Shunt details in Pekaway Connect
+- adjusted API to return pv daily yield to Pekaway Connect
+- adjusted Custom Data for app to support nested JS objects (see example functions > custom data)
+- enabled contextStorage in settings.js with flushInterval at 1h
+- fixed a problem with showing/hiding CAN-bus devices (timberline) on startup
+- fixed a problem with showing/hiding Dometic RC10 on startup
+- added the smartboil controller to be controlled via MQTT
+- made smartboil controller available for usage through existing touchdisplay boiler control page
+- added smartboil controls to API for Pekaway Connect app
+    - Hint: smartboil and "normal" boiler control are two different things and act seperately from each other! make sure to configure the correct controller (in dashboard)
+    - smartboil = Pekaway SmartBoil (seperate hardware device with wifi connection); boiler control = software boiler control native to VanPi OS
+- added an option to always shut down the connected heater in the boiler controls (not smartboil) for emergency cases
+- reworked bleMppt.py to keep connection more stable, adjusted mppt flow to save additional data in variable
+- adjusted API to return additional data for Pekaway Connect app
+- disabled the automatic 20min BLE restart interval
+- changed the function that reads the first 4 DS18B20 temp sensors to reduce noise/disturbances:
+    - "N/A" will only be written to the global variables if the expected sensor did not respond with a value for 6 consecutive times
+    - If "N/A" comes in (less than 6 times), the newest valid value will be kept
+- changed functions for temp automations, so that also In-Out-X Relays can be configured properly
+- changed functions to read stored timestamps from LTE bridge update more defensively to prevent function errrors
+
+
+# Update 2.0.10 (02. June 2026)
+- changed Dimmy and DimmyPro sampling frequency from 200 to 800
+- sanitized values in function that sends current values/data to touchdisplay
+- added timberline integration in CAN/RVC
+- adjusted API for new timberline integration
+- adjusted API for new Pekaway Connect update v1.1.0
+- fixed functions for RuuviTags to support both 3in1 and 4in1
+- adjusted function for Pekaway Wireless shunt to support Shunt v2 (shunt needs to be updated!)
+- added example functions that explain how to send custom push-notifications to the app (router and LTE bridge)
+- added PID 0xC038 for VE SmartShunt 
+- fixed wrong DimmyPro assignment by Switch Scheduler
+- setting the name of any relay, w-relay or dimmer to "-" will now hide it in the Pekaway Connect app
+- smaller bugfixes
+
+# Update 2.0.9 (25. Nov. 2025)
+- rewrote function that prevents Maxxfan from going into "auto" on power off
+- added In-Out-X relays as options for Boiler Relay
+- changed /etc/fstab to boot from SD-card reliably (if SD-card is present)
+- rewrote function to hide/show generic Heater/Truma/Maxxfan/Bayernlüfter
+- added function to use Relays 1-8 as "software-relays" to trigger a custom flow if set (see examples flow)
+- changed the scan BLE function to show BLE devices names more reliably
+- added In-Out-X & Dimmy Pro stats to mqtt api request
+- changed JBD/BMS to set global variables to 0 if connection is lost-
+- changed function to set baudrate for RJ45 GPS/Touchdisplay
+- fixed Dimmy Pro link in nodes (coming from display)
+- fixed mcp inputs to set button or switch on init for In-Out-X
+- fixed constantly triggering a change event and change to devices tab when addind new temp sensors in dashboard
+- fixed ui_scheduler setting settemp to 0 when turning off heater on schedule for autoerm & generic heater
+- removed excluding .json files from userdata backup
+- changed Ruuvitags functions to save battery values and send to app
+- added functions to send custom data/relays/dimmers to app (see examples flow)
+- added http endpoints for boiler + Dometic RC10 for app
+- added Dometic RC10 to ci2mqtt brigde and added respective dashboard nodes
+    - changed http and mqtt to send data to the app respectively
+- added a new http endpoint for LTE bridge to display current state and send state to app
+    - introduced a re-init of the wifi AP if bridge is lost
+- added new functions to overwrite ADC level values with temp values using 10k NTC temp sensors
+    - added new 10k NTC temp sensors to be used as values for boiler, temp automations, inside/ambient temp sensor and heaters
+
+
 # Update 2.0.8 (26. Aug. 2025)
 - added functions to support a seperate scheduler for Truma CI water
     - includes options to choose between "eco" and "hot" mode

@@ -24,10 +24,12 @@ gatt
 gpiozero
 idna
 lgpio
+paho-mqtt
 pexpect
 pigpio
 pip
 ptyprocess
+pycairo
 pycryptodomex
 pyftdi
 PyGObject

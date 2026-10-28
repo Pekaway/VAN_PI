@@ -55,7 +55,7 @@ async def establish_connection(mac_address):
                     data = await request_ina_data(client)
                     if data is None:
                         break
-                    await asyncio.sleep(10)  # Default interval in seconds
+                    await asyncio.sleep(2)  # Default interval in seconds
         except Exception as e:
             print("Error:", e)
             await asyncio.sleep(5)  # Retry after 5 seconds

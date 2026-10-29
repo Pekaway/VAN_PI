@@ -10,7 +10,7 @@ Adafruit-PureIO
 adafruit-python-shell
 args
 binho-host-adapter
-bleak
+bleak>=0.20,<4
 bottle
 certifi
 chardet

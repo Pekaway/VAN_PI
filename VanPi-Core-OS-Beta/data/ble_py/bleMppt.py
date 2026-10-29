@@ -319,7 +319,7 @@ class PekawayBleMppt:
         self._characteristics_by_short.clear()
         self._service_shorts.clear()
 
-        services = await self.client.get_services()
+        services = self.client.services
         for service in services:
             self._service_shorts.add(self._short_uuid(service.uuid))
             for characteristic in service.characteristics:

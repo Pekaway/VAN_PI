@@ -380,6 +380,11 @@ for raw in pathlib.Path(sys.argv[1]).read_text(encoding='utf-8-sig').splitlines(
         skipped.append(f'{package}: historical kernel; use the kernel metapackage')
     elif f'{package}\tinstalled' in installed or f'{base}\tinstalled' in installed or f'{base}:{architecture}\tinstalled' in installed:
         continue
+    elif re.match(r'^libcamera[0-9]', base):
+        # Old ABI packages can remain in the repository while requiring an IPA
+        # version replaced by a newer camera stack. Let camera applications pull
+        # in their matching libraries instead of replaying the image's ABI list.
+        skipped.append(f'{package}: historical camera ABI; resolved by camera application dependencies')
     elif package not in cache or cache[package].candidate is None:
         skipped.append(f'{package}: no installation candidate')
     else:

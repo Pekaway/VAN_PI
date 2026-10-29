@@ -24,7 +24,7 @@ gatt
 gpiozero
 idna
 lgpio
-paho-mqtt
+paho-mqtt>=2,<3
 pexpect
 pigpio
 pip

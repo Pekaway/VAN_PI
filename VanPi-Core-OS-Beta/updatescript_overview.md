@@ -37,8 +37,15 @@ This document outlines the structure and purpose of the VanPi OS update script. 
 - Automatically accepts changes in auto-update mode; otherwise prompts the user.
 - Executes `npm install` to sync packages.
 
+## System Package Installation
+- Installs required application packages explicitly and checks `packages.txt` for additional missing packages.
+- Skips foreign architectures, historical kernel packages and missing versioned `libcamera` ABI libraries from the image inventory. Camera applications resolve their matching libraries through APT dependencies.
+- Preserves installed camera libraries and does not force an IPA downgrade to reinstall an obsolete camera ABI.
+
 ## Python Module Installation
 - Installs system-wide and user-level Python packages as listed in `piplist.txt`.
+- Requires `paho-mqtt>=2,<3` for the Power Unit bridge. Installs it in `/usr/local` without removing Debian-owned files and upgrades stale user-level packages.
+- Verifies the imported Paho version and creates a `CallbackAPIVersion.VERSION2` client as both root and the update user before continuing. Logs the version and import path; a failed check aborts the update.
 - Uses `--break-system-packages` to avoid pip conflicts on Debian Bookworm.
 - Installs `bottle` package explicitly for HTTP APIs.
 

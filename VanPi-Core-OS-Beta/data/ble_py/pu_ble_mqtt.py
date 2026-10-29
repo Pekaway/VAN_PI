@@ -16,6 +16,9 @@ MQTT topics (<base> = <topic prefix>/<device id>, e.g. pekaway/power_unit/4142b9
     <base>/result     command results: sent, confirmed, timeout, superseded or error
 
 BLE connection:
+    Startup runs rfkill unblock all (via sudo -n unless running as root), also
+    before --scan. This clears software blocks for all radios, including Wi-Fi.
+    Failures are logged as warnings; BLE startup continues.
     The Linux default LE supervision timeout of 420 ms disconnects the link on
     short radio dropouts. --le-supervision-timeout (default 5 s) sets the kernel
     default for new connections (debugfs, sudo). Persistent alternative:
@@ -38,7 +41,7 @@ import time
 import paho.mqtt.client as mqtt
 from bleak import BleakClient, BleakScanner
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 SCHEMA_VERSION = 1
 
 LOG = logging.getLogger("pu_ble_mqtt")
@@ -480,6 +483,23 @@ def ha_discovery(topics, device_id, address, ha_prefix):
 # ---------------------------------------------------------------------------
 # Linux BLE parameters and HCI diagnostics
 # ---------------------------------------------------------------------------
+
+def unblock_radios():
+    """Clear software radio blocks without prompting or preventing BLE startup."""
+    command = ["rfkill", "unblock", "all"]
+    if os.geteuid() != 0:
+        command = ["sudo", "-n", *command]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=5, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        LOG.warning("Could not run rfkill unblock all: %s; continuing BLE startup", exc)
+        return
+    if result.returncode == 0:
+        LOG.info("rfkill unblock all completed (software radio blocks cleared)")
+    else:
+        LOG.warning("rfkill unblock all failed: %s; continuing BLE startup",
+                    result.stderr.strip() or result.stdout.strip() or f"exit {result.returncode}")
+
 
 def debugfs_path(adapter, name):
     return f"/sys/kernel/debug/bluetooth/{adapter}/{name}"
@@ -1178,6 +1198,7 @@ def main(argv=None):
     # bleak is very verbose at debug level.
     logging.getLogger("bleak").setLevel(logging.WARNING)
     if args.scan:
+        unblock_radios()
         LOG.info("Scanning for Power Units for %g s on %s ...", args.scan_time, args.adapter)
         try:
             devices = asyncio.run(scan_power_units(args.adapter, args.scan_time))
@@ -1197,6 +1218,7 @@ def main(argv=None):
              "Home Assistant %s", __version__, args.address, args.adapter, args.device_id, args.mqtt_host,
              args.mqtt_port, f"user {args.mqtt_username}" if args.mqtt_username else "anonymous", args.keepalive,
              f"discovery every {args.ha_interval:g} s" if args.ha_discovery else "off")
+    unblock_radios()
     try:
         configure_le_supervision_timeout(args.adapter, args.le_supervision_timeout)
     except Exception as exc:

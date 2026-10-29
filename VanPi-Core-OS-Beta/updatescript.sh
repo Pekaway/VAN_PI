@@ -16,6 +16,7 @@ NodeRedDir="$HOME/.node-red"
 Progress='/var/log/pekaway-update_progress.log'
 MIN_KERNEL_VERSION='6.1'
 MIN_PYTHON_VERSION='3.11'
+MIN_LOG_FREE_KIB=16384
 currentStep=0
 steps=13
 AutoUpdate=false
@@ -26,6 +27,7 @@ StageDir=''
 BackupDir=''
 LOG_FILE=''
 declare -a ChangedTargets=()
+declare -a PackageFailures=()
 declare -A BackedUp=()
 PythonFiles=(
     data/ads_py/simplelevel.py data/ads_py/web2.py data/ds18b20_py/ds18b20.py
@@ -36,9 +38,102 @@ PythonFiles=(
 die() { echo "Error: $*" >&2; exit 1; }
 warn() { echo "Warning: $*" >&2; }
 
+record_package_failure() {
+    local message=$1
+    PackageFailures+=("$message")
+    if ! printf '%s\n' "$message" >> "$BackupDir/package-failures.log"; then
+        warn 'Could not write the package warnings file; keeping warnings in memory.'
+    fi
+    warn "$message; the update will continue."
+}
+
+report_package_failures() {
+    local line
+    if (( ${#PackageFailures[@]} > 0 )); then
+        echo 'Package installation and runtime warnings:'
+        for line in "${PackageFailures[@]}"; do
+            printf '  - %s\n' "$line"
+        done
+        echo "Warning file, if writable: $BackupDir/package-failures.log; full output: $LOG_FILE"
+    fi
+}
+
+write_progress() {
+    local message=$1 fallback="$BackupDir/update-progress.log"
+    if printf '%s\n' "$message" | sudo -n tee "$Progress"; then
+        return 0
+    fi
+    if [[ $Progress == "$fallback" ]]; then
+        warn "Could not write progress to $fallback; continuing without a progress file."
+        return 0
+    fi
+    warn "Could not write progress to $Progress; using $fallback. Dashboard progress may be unavailable."
+    Progress=$fallback
+    if ! printf '%s\n' "$message" | sudo -n tee "$Progress"; then
+        warn "Could not write progress to $fallback; continuing without a progress file."
+    fi
+    return 0
+}
+
 show_progress() {
     currentStep=$((currentStep + 1))
-    printf 'Step %s/%s: %s\n' "$currentStep" "$steps" "$1" | sudo -n tee "$Progress"
+    write_progress "Step $currentStep/$steps: $1"
+}
+
+log_free_kib() {
+    LC_ALL=C df -Pk -- "$1" | awk 'NR == 2 {print $4}'
+}
+
+prepare_log_storage() {
+    local log_dir=$1 free file relative destination log_dev backup_dev
+    echo "Preparing log storage at $log_dir before starting the update."
+    # Vacuum archived journals only; never truncate active binary journal files.
+    if command -v journalctl >/dev/null 2>&1; then
+        sudo -n journalctl --vacuum-size=32M || warn 'Could not vacuum archived journals.'
+        # Even on a full filesystem, rotation may succeed and make the former
+        # active journal eligible for vacuuming. Failure is non-fatal.
+        sudo -n journalctl --rotate || warn 'Could not rotate the journal.'
+        sudo -n journalctl --vacuum-size=32M || warn 'Could not vacuum rotated journals.'
+    fi
+    free=$(log_free_kib "$log_dir") || free=0
+    [[ $free =~ ^[0-9]+$ ]] || free=0
+    if (( free < MIN_LOG_FREE_KIB )); then
+        echo "Log filesystem has ${free} KiB free; looking for large text logs to preserve and clear."
+        log_dev=$(stat -c %d -- "$log_dir") || log_dev=''
+        backup_dev=$(stat -c %d -- "$BackupDir") || backup_dev=''
+        if [[ -n $log_dev && -n $backup_dev && $log_dev != "$backup_dev" ]]; then
+            while IFS= read -r -d '' file; do
+                relative=${file#"$log_dir"/}
+                destination="$BackupDir/log-recovery/$relative"
+                if sudo -n mkdir -p -- "$(dirname "$destination")" && \
+                   sudo -n cp -p -- "$file" "$destination" && \
+                   sudo -n truncate -s 0 -- "$file"; then
+                    echo "Saved and cleared $file (backup: $destination)."
+                else
+                    warn "Could not preserve and clear $file."
+                fi
+                free=$(log_free_kib "$log_dir") || free=0
+                [[ $free =~ ^[0-9]+$ ]] || free=0
+                (( free < MIN_LOG_FREE_KIB )) || break
+            done < <(sudo -n find "$log_dir" -xdev -type f -size +1M \
+                ! -path "$log_dir/journal/*" \
+                \( -name '*.log' -o -name '*.log.1' -o -name 'syslog' -o -name 'syslog.1' \) -print0)
+        else
+            warn 'Log backup is not on a separate filesystem; skipping text-log clearing.'
+        fi
+    fi
+    free=$(log_free_kib "$log_dir") || free=0
+    [[ $free =~ ^[0-9]+$ ]] || free=0
+    if (( free >= MIN_LOG_FREE_KIB )); then
+        if [[ -x /usr/sbin/logrotate && -f /etc/logrotate.conf ]]; then
+            sudo -n /usr/sbin/logrotate -f /etc/logrotate.conf || warn 'Log rotation did not complete; see the maintenance log.'
+        else
+            warn 'logrotate or its configuration is unavailable.'
+        fi
+    else
+        warn "Log filesystem still has only ${free} KiB free; update logs will also be stored in the backup directory."
+    fi
+    echo "Log storage preparation finished; $(log_free_kib "$log_dir" || echo unknown) KiB free."
 }
 
 normalize_version() {
@@ -129,8 +224,9 @@ finish() {
         fi
         sudo -n nginx -t && sudo -n systemctl reload nginx
         sudo -n udevadm control --reload-rules
-        printf 'Error: update failed; see %s\n' "$LOG_FILE" | sudo -n tee "$Progress"
+        write_progress "Error: update failed; see $LOG_FILE"
         echo 'Package changes may require repair; the OS version has not been advanced.'
+        report_package_failures
     fi
     if [[ -n $StageDir && $StageDir == "$PekawayDir"/.update-* && -d $StageDir ]]; then
         rm -rf -- "$StageDir"
@@ -336,10 +432,29 @@ pathlib.Path(sys.argv[2]).write_text('\n'.join(result) + '\n', encoding='utf-8')
 PY
 }
 
+install_apt_packages() {
+    local group=$1 package
+    shift
+    (( $# > 0 )) || return 0
+    if sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::='--force-confold' "$@"; then
+        return 0
+    fi
+    warn "APT $group batch failed; retrying packages individually."
+    for package in "$@"; do
+        if ! sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::='--force-confold' "$package"; then
+            record_package_failure "APT $group: $package"
+        fi
+    done
+}
+
 install_system_packages() {
-    sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update
+    if ! sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update; then
+        record_package_failure 'APT repository refresh failed; package lists may be outdated'
+    fi
     # Keep the previous updater's OS upgrade behaviour, preserving local configs.
-    sudo -n env DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::='--force-confold'
+    if ! sudo -n env DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::='--force-confold'; then
+        record_package_failure 'APT upgrade failed; see the full log for affected packages'
+    fi
     local -a required=(python3-pip python3-apt python3-gi python3-gi-cairo python3-cairo
         python3-smbus python3-dbus python3-dev python-is-python3 bluez can-utils
         i2c-tools iw jq nginx mosquitto mosquitto-clients)
@@ -350,11 +465,11 @@ install_system_packages() {
             required+=(python3-rpi.gpio)
         fi
     fi
-    sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::='--force-confold' "${required[@]}"
+    install_apt_packages 'required' "${required[@]}"
 
     # packages.txt is an image inventory, not an instruction to reinstall old
     # kernels or foreign-architecture libraries on every Raspberry Pi.
-    python3 - "$StageDir/packages.txt" "$StageDir/apt-missing.txt" "$BackupDir/packages-skipped.log" <<'PY'
+    if python3 - "$StageDir/packages.txt" "$StageDir/apt-missing.txt" "$BackupDir/packages-skipped.log" <<'PY'
 import apt
 import pathlib
 import re
@@ -395,12 +510,16 @@ print(f'APT inventory: {len(missing)} missing packages; {len(skipped)} skipped e
 for item in skipped:
     print('Skipped:', item)
 PY
-    local -a missing=()
-    mapfile -t missing < "$StageDir/apt-missing.txt"
-    if (( ${#missing[@]} > 0 )); then
-        sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::='--force-confold' "${missing[@]}"
+    then
+        local -a missing=()
+        mapfile -t missing < "$StageDir/apt-missing.txt"
+        install_apt_packages 'inventory' "${missing[@]}"
+    else
+        record_package_failure 'APT inventory could not be evaluated; see the full log'
     fi
-    sudo -n apt-get clean
+    if ! sudo -n apt-get clean; then
+        record_package_failure 'APT cache cleanup failed'
+    fi
     # Do not autoremove packages during an application update.
 }
 
@@ -408,31 +527,92 @@ verify_python_runtime() {
     "$@" - <<'PY'
 import importlib
 import importlib.metadata
-import paho.mqtt.client as mqtt
-
-version = importlib.metadata.version('paho-mqtt')
-if version.split('.')[0] != '2':
-    raise SystemExit(f'paho-mqtt 2.x required, got {version} from {mqtt.__file__}')
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+errors = []
+try:
+    import paho.mqtt.client as mqtt
+    version = importlib.metadata.version('paho-mqtt')
+    if version.split('.')[0] != '2':
+        raise ValueError(f'paho-mqtt 2.x required, got {version} from {mqtt.__file__}')
+    mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    print(f'Paho MQTT runtime OK; version {version} from {mqtt.__file__}')
+except Exception as exc:
+    errors.append(('paho-mqtt>=2,<3', exc))
 for name in ('bleak', 'ruuvitag_sensor.ruuvi', 'smbus2', 'pexpect', 'gi', 'cairo', 'bottle'):
-    importlib.import_module(name)
-from ruuvitag_sensor.ruuvi import RuuviTagSensor
-if not hasattr(RuuviTagSensor, 'get_data_async'):
-    raise SystemExit('Installed ruuvitag_sensor does not provide get_data_async')
-print(f'Python runtime OK; paho-mqtt {version} from {mqtt.__file__}')
+    try:
+        module = importlib.import_module(name)
+        if name == 'ruuvitag_sensor.ruuvi' and not hasattr(module.RuuviTagSensor, 'get_data_async'):
+            raise ValueError('RuuviTagSensor does not provide get_data_async')
+    except Exception as exc:
+        errors.append((name, exc))
+if errors:
+    for name, exc in errors:
+        print(f'PACKAGE WARNING: {name}: {type(exc).__name__}: {exc}')
+    raise SystemExit(1)
+print('Python runtime OK')
 PY
+}
+
+check_python_runtime() {
+    local scope=$1 line output found=false
+    shift
+    if output=$(verify_python_runtime "$@" 2>&1); then
+        printf '%s\n' "$output"
+        return 0
+    fi
+    printf '%s\n' "$output"
+    while IFS= read -r line || [[ -n $line ]]; do
+        if [[ $line == 'PACKAGE WARNING: '* ]]; then
+            record_package_failure "Python $scope: ${line#PACKAGE WARNING: }"
+            found=true
+        fi
+    done <<< "$output"
+    if [[ $found == false ]]; then
+        record_package_failure "Python $scope runtime verification failed; see the full log"
+    fi
+}
+
+install_pip_requirements() {
+    local scope=$1 requirement
+    local -a command=(python3 -m pip install --break-system-packages --upgrade)
+    if [[ $scope == root ]]; then
+        command=(sudo -n -H "${command[@]}")
+    else
+        command+=(--user)
+    fi
+    if "${command[@]}" -r "$StageDir/python-requirements.txt"; then
+        return 0
+    fi
+    warn "pip $scope batch failed; retrying requirements individually."
+    while IFS= read -r requirement || [[ -n $requirement ]]; do
+        [[ -n $requirement ]] || continue
+        if ! "${command[@]}" "$requirement"; then
+            record_package_failure "pip $scope: $requirement"
+        fi
+    done < "$StageDir/python-requirements.txt"
 }
 
 install_python_packages() {
     prepare_python_requirements "$StageDir/piplist.txt" "$StageDir/python-requirements.txt"
     # Install in /usr/local, leaving the Debian-owned paho 1.x files intact.
     # paho has no dependencies. Limit --ignore-installed deliberately to it.
-    sudo -n -H python3 -m pip install --break-system-packages --ignore-installed --no-deps 'paho-mqtt>=2,<3'
-    sudo -n -H python3 -m pip install --break-system-packages --upgrade -r "$StageDir/python-requirements.txt"
+    if ! sudo -n -H python3 -m pip install --break-system-packages --ignore-installed --no-deps 'paho-mqtt>=2,<3'; then
+        warn 'Initial Paho MQTT installation failed; the requirements installation and runtime checks will retry it.'
+    fi
+    install_pip_requirements root
     # Update stale user-site packages which otherwise shadow system packages.
-    python3 -m pip install --user --break-system-packages --upgrade -r "$StageDir/python-requirements.txt"
-    verify_python_runtime sudo -n -H python3
-    verify_python_runtime python3
+    install_pip_requirements user
+    check_python_runtime root sudo -n -H python3
+    check_python_runtime user python3
+}
+
+install_node_red_modules() {
+    install_managed "$StageDir/package.json" "$NodeRedDir/package.json"
+    if ! (cd "$NodeRedDir" && npm install --no-audit --no-fund); then
+        record_package_failure 'npm install failed; see the full log for affected modules'
+    fi
+    if ! (cd "$NodeRedDir" && npm ls --omit=dev --depth=0); then
+        record_package_failure 'npm dependency verification failed; see the full log for affected modules'
+    fi
 }
 
 prepare_input_defaults() {
@@ -634,19 +814,56 @@ main() {
     BackupDir=$(mktemp -d "$PekawayDir/nrbackups/update-${Version}-$(date +%Y%m%d-%H%M%S)-XXXXXX")
     chmod 0700 "$BackupDir"
     StageDir=$(mktemp -d "$PekawayDir/.update-XXXXXX")
-    LOG_FILE="/var/log/pekaway-update_$(date +%Y_%m_%d-%H_%M_%S).log"
-    sudo -n touch "$LOG_FILE" "$Progress"
-    sudo -n chown "$(id -u):$(id -g)" "$LOG_FILE"
-    sudo -n chmod 0644 "$LOG_FILE" "$Progress"
-    exec > >(tee -a "$LOG_FILE") 2>&1
+    # Log maintenance, progress and logging are best effort: a full log disk
+    # must not itself stop the update. The persistent copy is preferred.
+    local var_log_file="/var/log/pekaway-update_$(date +%Y_%m_%d-%H_%M_%S).log" var_log_enabled=false
+    local maintenance_log="$BackupDir/log-maintenance.log" persistent_log="$BackupDir/update.log"
+    local -a log_destinations=()
+    if : > "$maintenance_log"; then
+        prepare_log_storage /var/log >> "$maintenance_log" 2>&1 || \
+            warn "Log preparation encountered an error; see $maintenance_log."
+    else
+        warn 'Cannot create the log maintenance file; attempting log preparation without it.'
+        prepare_log_storage /var/log || warn 'Log preparation encountered an error.'
+    fi
+    LOG_FILE='unavailable; see service journal or console'
+    if printf 'Initializing update log...\n' >> "$persistent_log"; then
+        LOG_FILE=$persistent_log
+        log_destinations+=("$persistent_log")
+    else
+        warn "Cannot write $persistent_log; continuing without this log copy."
+    fi
+    if ! sudo -n touch "$Progress" || ! sudo -n chmod 0644 "$Progress" || \
+       ! printf 'Starting update...\n' | sudo -n tee "$Progress" >/dev/null; then
+        warn "Cannot write dashboard progress to $Progress; using the backup directory."
+        Progress="$BackupDir/update-progress.log"
+    fi
+    if sudo -n touch "$var_log_file" && \
+       sudo -n chown "$(id -u):$(id -g)" "$var_log_file" && \
+       sudo -n chmod 0644 "$var_log_file" && \
+       printf 'Initializing update log...\n' >> "$var_log_file"; then
+        var_log_enabled=true
+        log_destinations+=("$var_log_file")
+        if [[ $LOG_FILE != "$persistent_log" ]]; then LOG_FILE=$var_log_file; fi
+    else
+        warn "Cannot write $var_log_file; continuing without this log copy."
+    fi
+    # Keep draining the pipe even if every tee output fails, avoiding SIGPIPE.
+    exec > >(tee -p -a "${log_destinations[@]}" || cat >/dev/null) 2>&1
     trap 'echo "Update failed at line $LINENO (exit $?)." >&2' ERR
     trap finish EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
-    printf 'PID=%s\n' "$$" | sudo -n tee "$Progress"
+    if [[ -f $maintenance_log ]]; then
+        cat "$maintenance_log" || warn "Cannot read $maintenance_log."
+    fi
+    write_progress "PID=$$"
     # Give the existing dashboard file watcher time to read the PID-only entry.
     sleep 7
     echo "Log: $LOG_FILE; file backups: $BackupDir"
+    if [[ $var_log_enabled == true && $LOG_FILE != "$var_log_file" ]]; then
+        echo "Additional log copy: $var_log_file"
+    fi
     echo 'Existing boot config, SQLite data and CI-bridge settings will be preserved.'
 
     show_progress 'downloading and validating update files'
@@ -704,9 +921,7 @@ PY
     install_python_packages
 
     show_progress 'installing Node-RED modules'
-    install_managed "$StageDir/package.json" "$NodeRedDir/package.json"
-    (cd "$NodeRedDir" && npm install --no-audit --no-fund)
-    (cd "$NodeRedDir" && npm ls --omit=dev --depth=0)
+    install_node_red_modules
 
     show_progress 'installing Python scripts and both display firmware files'
     install_payload
@@ -739,10 +954,21 @@ PY
     sudo -n systemctl is-active --quiet nodered.service || die 'Node-RED did not remain active after the update.'
 
     show_progress 'recording successful update'
+    report_package_failures
     UpdateComplete=true
     NodeRedStopped=false
     echo "Update to $Version completed. Backups: $BackupDir"
-    sudo -n truncate -s 0 "$Progress"
+    if (( ${#PackageFailures[@]} > 0 )); then
+        local warning_summary
+        warning_summary=$(
+            echo 'Update completed with package warnings:'
+            printf '%s\n' "${PackageFailures[@]}"
+            printf 'Warning file, if writable: %s; full log: %s\n' "$BackupDir/package-failures.log" "$LOG_FILE"
+        )
+        write_progress "$warning_summary"
+    else
+        sudo -n truncate -s 0 "$Progress" || warn "Could not clear progress at $Progress."
+    fi
     if [[ $AutoUpdate == true ]]; then
         echo 'Rebooting automatically after dashboard update.'
         sudo -n systemctl reboot || warn 'Update succeeded, but automatic reboot failed. Reboot manually.'

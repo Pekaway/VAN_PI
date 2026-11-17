@@ -1,90 +1,98 @@
 #########################
 #                       #
-#       Script by       #
-#      Pekaway GmbH     #
+#      Script by        #
+#     Pekaway GmbH       #
 #                       #
 #########################
 
 import asyncio
-import os
 import json
+import os
 import signal
-from datetime import datetime, timedelta
+import sys
 
 os.environ["RUUVI_BLE_ADAPTER"] = "bleak"
+from bleak import BleakScanner
+from ruuvitag_sensor.adapters.bleak_ble import BleCommunicationBleak
+from ruuvitag_sensor.adapters.utils import rssi_to_hex
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
 
-# Read MAC addresses once at startup
-def get_mac_addresses_from_file(file_path):
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-        macs = [entry["mac"] for entry in data]
-    return set(macs)  # Return as a set for fast lookup
 
-# Graceful shutdown function
-def shutdown(loop):
-    print("Shutting down gracefully...")
-    for task in asyncio.all_tasks(loop):
+def get_mac_addresses_from_file(file_path):
+    with open(file_path, "r") as file:
+        return {entry["mac"] for entry in json.load(file)}
+
+
+def shutdown(task):
+    # Cancel once and let the scanner's finally block finish before exiting.
+    if not task.cancelling():
+        print("Shutting down gracefully...", file=sys.stderr, flush=True)
         task.cancel()
-    loop.stop()
+
 
 async def main():
-    file_path = "/home/pi/pekaway/ruuvitags.json"
-    macs = get_mac_addresses_from_file(file_path)
+    loop = asyncio.get_running_loop()
+    task = asyncio.current_task()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, shutdown, task)
 
+    macs = get_mac_addresses_from_file("/home/pi/pekaway/ruuvitags.json")
     while True:
         try:
-            data_json = await asyncio.wait_for(collect_ruuvitag_data(macs, per_device_timeout=20), timeout=25)
+            data_json = await asyncio.wait_for(
+                collect_ruuvitag_data(macs, per_device_timeout=20), timeout=25
+            )
         except asyncio.TimeoutError:
-            print("Global timeout occurred. Retrying...")
+            print("Global timeout occurred. Retrying...", file=sys.stderr, flush=True)
             data_json = {mac: "timeout" for mac in macs}
 
-        print(json.dumps(data_json, indent=4))
+        # Keep diagnostics out of the JSON stream consumed by Node-RED.
+        print(json.dumps(data_json), flush=True)
         await asyncio.sleep(20)
 
+
 async def collect_ruuvitag_data(macs, per_device_timeout=20):
+    if not macs:
+        return {}
+
     found = {}
-    first_seen = {}
-    start_time = datetime.now()
+    wanted = {mac.upper(): mac for mac in macs}
+    packets = asyncio.Queue(maxsize=32)
 
-    async for mac_address, sensor_data in RuuviTagSensor.get_data_async(list(macs)):
-        now = datetime.now()
+    def receive(device, advertisement):
+        mac = wanted.get(device.address.upper())
+        if mac is None or mac in found:
+            return
+        manufacturer_data = advertisement.manufacturer_data.get(1177)
+        if manufacturer_data is not None and not packets.full():
+            packets.put_nowait((mac, manufacturer_data, advertisement.rssi))
 
-        # Check if we have exceeded total timeout
-        if (now - start_time).total_seconds() > per_device_timeout:
-            print("Per-device timeout reached.")
-            break
+    # Own the scanner here: the library's async generator can skip scanner.stop()
+    # when wait_for cancels it. Reuse its existing Ruuvi decoding unchanged.
+    scanner = BleakScanner(detection_callback=receive)
+    try:
+        await scanner.start()
+        try:
+            async with asyncio.timeout(per_device_timeout):
+                while len(found) < len(macs):
+                    mac, manufacturer_data, rssi = await packets.get()
+                    raw = BleCommunicationBleak._parse_data(manufacturer_data)
+                    raw += rssi_to_hex(rssi)
+                    parsed = RuuviTagSensor._parse_data((mac, raw), [], [mac])
+                    if parsed is not None:
+                        found[mac] = parsed[1]
+        except asyncio.TimeoutError:
+            # This deadline also expires when no advertisements arrive at all.
+            pass
+    finally:
+        # Finish StopDiscovery before returning, retrying, or shutting down.
+        await scanner.stop()
 
-        if mac_address in macs and mac_address not in found:
-            found[mac_address] = sensor_data
-            first_seen[mac_address] = now
-            print(f"Received data from {mac_address}")
+    return {mac: found.get(mac, "timeout") for mac in macs}
 
-        # Minor sleep to reduce CPU pressure
-        await asyncio.sleep(0.01)
-
-        # Early exit if we already have all
-        if len(found) == len(macs):
-            break
-
-    # Prepare result: mark missing devices as "timeout"
-    data_json = {}
-    for mac in macs:
-        if mac in found:
-            data_json[mac] = found[mac]
-        else:
-            data_json[mac] = "timeout"
-            print(f"Device {mac} not found in time.")
-
-    return data_json
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, lambda: shutdown(loop))
-    
     try:
-        loop.run_until_complete(main())
-    finally:
-        loop.close()
+        asyncio.run(main())
+    except (asyncio.CancelledError, KeyboardInterrupt):
+        pass

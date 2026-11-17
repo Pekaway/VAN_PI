@@ -177,12 +177,13 @@ def thread2(threadname):
         print("error")
     while True:
     
-        chan = AnalogIn(adc, ADS.P0, ADS.P1)
+        # AnalogIn accepts channel numbers in both ADS1x15 2.x and 3.x.
+        chan = AnalogIn(adc, 0, 1)
         print(f"Channel 0: {chan.value} {chan.voltage}")
         micros = int(round(time.time() * 1000000))
         #adc1.gain = 2#gains[0]
         #adc.gain = 16#gains[5]
-        Io = AnalogIn(adc, ADS.P0, ADS.P1)
+        Io = AnalogIn(adc, 0, 1)
         #print(f"Io: {Io}")
         #print(f"gain Vo: {adc.gain}")
         print(f"factorI: {factorI}")
@@ -195,7 +196,7 @@ def thread2(threadname):
               amps = amps * -1
         print(f"ampere: {amps}")
         adc1.gain = 2  # Set the gain for the ADC
-        Vo = AnalogIn(adc1, ADS.P2, ADS.P3)
+        Vo = AnalogIn(adc1, 2, 3)
         print(f"Channel 3: {Vo.value} {Vo.voltage}")
         V = ((2.048*Vo.value/32768)*11.9)+0.6
         #V += 0.6
@@ -210,10 +211,10 @@ def thread2(threadname):
         tVI = [micros, V, I]
 
         if count > 5:
-            level1 = AnalogIn(adc2, ADS.P0).value
-            level2 = AnalogIn(adc2, ADS.P1).value
-            level3 = AnalogIn(adc2, ADS.P2).value
-            level4 = AnalogIn(adc2, ADS.P3).value
+            level1 = AnalogIn(adc2, 0).value
+            level2 = AnalogIn(adc2, 1).value
+            level3 = AnalogIn(adc2, 2).value
+            level4 = AnalogIn(adc2, 3).value
             count = 0
             print("ads THREAD running")
             checknumber = random.randint(1, 1000000)

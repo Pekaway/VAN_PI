@@ -20,7 +20,8 @@ def main(sleep_time):
     # Main loop.
     while True:
         # Read all the ADC channel values and store them in a list.
-        values = [(AnalogIn(ads, i).value, AnalogIn(ads, i).voltage) for i in (ADS.P0, ADS.P1, ADS.P2, ADS.P3)]
+        # AnalogIn accepts channel numbers in both ADS1x15 2.x and 3.x.
+        values = [(AnalogIn(ads, i).value, AnalogIn(ads, i).voltage) for i in (0, 1, 2, 3)]
         # Create a dictionary to hold the channel values.
         values_dict = {'channel{}'.format(i): {'value': value[0], 'voltage': value[1]} for i, value in enumerate(values)}
         # Serialize the dictionary to JSON format.

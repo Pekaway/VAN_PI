@@ -319,7 +319,7 @@ class PekawayBleMppt:
         self._characteristics_by_short.clear()
         self._service_shorts.clear()
 
-        services = await self.client.get_services()
+        services = self.client.services
         for service in services:
             self._service_shorts.add(self._short_uuid(service.uuid))
             for characteristic in service.characteristics:
@@ -503,41 +503,6 @@ class PekawayBleMppt:
                     len(frame),
                 )
             status = self._decode_modbus_status(frame, start_address=0x3030, register_count=register_count)
-            issues = self._status_plausibility_issues(status)
-            if issues:
-                self.logger.warning(
-                    "ignoring implausible legacy realtime frame writer=%s sid=0x%02X count=0x%02X issues=%s",
-                    writer_short,
-                    slave_id,
-                    register_count,
-                    "; ".join(issues),
-                )
-                retry_frame = await self._query_modbus_block(
-                    start_address=0x3030,
-                    register_count=register_count,
-                    function_code=0x04,
-                    slave_ids=(slave_id,),
-                    timeout=timeout,
-                    stop_event=stop_event,
-                    forced_writer_short_uuid=writer_short,
-                    forced_modes=(False,),
-                    force_single_slave_id=True,
-                    poll_reads_during_wait=poll_reads_during_wait,
-                )
-                if retry_frame is None:
-                    continue
-                status = self._decode_modbus_status(retry_frame, start_address=0x3030, register_count=register_count)
-                issues = self._status_plausibility_issues(status)
-                if issues:
-                    self.logger.warning(
-                        "ignoring repeated implausible legacy realtime frame writer=%s sid=0x%02X count=0x%02X issues=%s",
-                        writer_short,
-                        slave_id,
-                        register_count,
-                        "; ".join(issues),
-                    )
-                    continue
-
             status["PekawayBLEMppt"]["protocol"]["mode"] = "legacy"
             status["PekawayBLEMppt"]["statusHints"].insert(0, "Legacy transport decoded via FC04 realtime block")
 
@@ -615,35 +580,6 @@ class PekawayBleMppt:
                     len(frame),
                 )
             status = self._decode_modbus_status(frame, start_address=0x3030, register_count=register_count)
-            issues = self._status_plausibility_issues(status)
-            if issues:
-                self.logger.warning(
-                    "ignoring implausible modern realtime frame sid=0x%02X count=0x%02X issues=%s",
-                    slave_id,
-                    register_count,
-                    "; ".join(issues),
-                )
-                retry_frame = await self._query_modbus_block(
-                    start_address=0x3030,
-                    register_count=register_count,
-                    function_code=0x04,
-                    slave_ids=(slave_id,),
-                    timeout=0.8 if probe else 1.5,
-                    stop_event=stop_event,
-                    poll_reads_during_wait=poll_reads_during_wait,
-                )
-                if retry_frame is None:
-                    continue
-                status = self._decode_modbus_status(retry_frame, start_address=0x3030, register_count=register_count)
-                issues = self._status_plausibility_issues(status)
-                if issues:
-                    self.logger.warning(
-                        "ignoring repeated implausible modern realtime frame sid=0x%02X count=0x%02X issues=%s",
-                        slave_id,
-                        register_count,
-                        "; ".join(issues),
-                    )
-                    continue
 
             if probe:
                 self._protocol_mode = "modern"
@@ -1111,73 +1047,6 @@ class PekawayBleMppt:
             "batteryVoltageHigh2dAgoV": self._scaled(words[11], 100),
         }
 
-    # Reject frames that decode cleanly but clearly violate physical constraints.
-    def _status_plausibility_issues(self, status):
-        root = (status or {}).get("PekawayBLEMppt", {})
-        pv = root.get("pv", {})
-        batt = root.get("batt", {})
-        load = root.get("load", {})
-        issues = []
-
-        def first(*values):
-            for value in values:
-                if value is not None:
-                    return value
-            return None
-
-        def add_range_issue(name, value, low, high):
-            if value is None:
-                return
-            if value < low or value > high:
-                issues.append(f"{name}={value} outside {low}..{high}")
-
-        def add_power_issue(label, voltage, current, power):
-            if voltage is None or current is None or power is None:
-                return
-
-            measured = abs(power)
-            if measured > 100000.0:
-                issues.append(f"{label} power={power}W is implausibly large")
-                return
-
-            expected = abs(voltage * current)
-            if expected < 5.0 or measured < 5.0:
-                return
-
-            if voltage < 1.0 and abs(current) > 5.0:
-                issues.append(f"{label} voltage/current combo looks invalid: {voltage}V, {current}A")
-                return
-
-            ratio = measured / expected if expected else float("inf")
-            if ratio < 0.2 or ratio > 20.0:
-                issues.append(
-                    f"{label} power mismatch: {power}W vs {voltage}V * {current}A"
-                )
-
-        battery_voltage = first(root.get("batteryVoltageV"), batt.get("V"))
-        battery_current = first(root.get("batteryCurrentA"), batt.get("A"))
-        battery_power = first(root.get("batteryPowerW"), batt.get("W"))
-        load_voltage = first(root.get("loadVoltageV"), load.get("V"))
-        load_current = first(root.get("loadCurrentA"), load.get("A"))
-        load_power = first(root.get("loadPowerW"), load.get("W"))
-        pv_voltage = first(root.get("pvVoltageV"), pv.get("V"))
-        pv_current = first(root.get("pvCurrentA"), pv.get("A"))
-        pv_power = first(root.get("pvPowerW"), pv.get("W"))
-        temp_c = first(root.get("controllerTempC"), batt.get("temp"))
-        environment_temp_c = root.get("environmentTempC")
-
-        add_range_issue("batteryVoltageV", battery_voltage, 0.0, 120.0)
-        add_range_issue("loadVoltageV", load_voltage, 0.0, 120.0)
-        add_range_issue("pvVoltageV", pv_voltage, 0.0, 500.0)
-        add_range_issue("environmentTempC", environment_temp_c, -40.0, 125.0)
-        add_range_issue("controllerTempC", temp_c, -40.0, 125.0)
-
-        add_power_issue("pv", pv_voltage, pv_current, pv_power)
-        add_power_issue("battery", battery_voltage, battery_current, battery_power)
-        add_power_issue("load", load_voltage, load_current, load_power)
-
-        return issues
-
     def _parse_legacy_status(self, status):
         result = self._base_status_block(protocol="legacy", status_hints=["Legacy single-frame status response"])
         result["PekawayBLEMppt"]["soc"] = self._u8(status, 46)
@@ -1212,17 +1081,11 @@ class PekawayBleMppt:
     def _extract_read_response_frame(self, frames, function_code, expected_byte_count):
         for frame in frames:
             if len(frame) >= 3 and frame[1] == function_code and frame[2] == expected_byte_count:
-                payload_end = 3 + expected_byte_count
-                if len(frame) == payload_end:
-                    return bytes(frame[:payload_end])
-                if len(frame) >= payload_end + 2:
-                    crc = (frame[payload_end + 1] << 8) | frame[payload_end]
-                    if self._crc16_modbus(frame[:payload_end]) == crc:
-                        return bytes(frame[:payload_end])
+                if len(frame) >= 3 + expected_byte_count:
+                    return bytes(frame[: 3 + expected_byte_count])
             if len(frame) >= 2 and frame[0] == function_code and frame[1] == expected_byte_count:
-                payload_end = 2 + expected_byte_count
-                if len(frame) == payload_end:
-                    return bytes([0x01, *frame[:payload_end]])
+                if len(frame) >= 2 + expected_byte_count:
+                    return bytes([0x01, *frame[: 2 + expected_byte_count]])
         return None
 
     def _extract_read_response_frame_from_stream(self, stream, function_code, expected_byte_count):
@@ -1236,17 +1099,12 @@ class PekawayBleMppt:
         for idx in range(0, len(data) - 2):
             if data[idx + 1] == function_code and data[idx + 2] == expected_byte_count:
                 end = idx + 3 + expected_byte_count
-                if len(data) == end:
+                if len(data) >= end:
                     return data[idx:end]
-                if len(data) >= end + 2:
-                    crc = (data[end + 1] << 8) | data[end]
-                    if self._crc16_modbus(data[idx:end]) == crc:
-                        return data[idx:end]
             if data[idx] == function_code and data[idx + 1] == expected_byte_count:
                 end = idx + 2 + expected_byte_count
                 if len(data) >= end:
-                    if len(data) == end:
-                        return bytes([0x01, *data[idx:end]])
+                    return bytes([0x01, *data[idx:end]])
         return None
 
     def _extract_words_from_frame(self, frame):

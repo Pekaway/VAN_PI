@@ -387,9 +387,11 @@ fi
 echo -e "${Cyan}Downloading .tft files for NSPanel and Pekaway Touchdisplay${NC}"
 mv ~/VAN_PI/VanPi-Core-OS/data/userdata/NSPanel/VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL.tft
 mv ~/VAN_PI/VanPi-Core-OS/data/userdata/NSPanel/autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be
-sudo rm /boot/*.tft
-sudo chown root:root ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft # cannot preserve ownership in root directory
-sudo mv ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch.tft /boot/PekawayTouch.tft
+TouchdisplayVersion='2.1.0'
+sudo rm -f /boot/PekawayTouch*.tft /boot/firmware/PekawayTouch*.tft
+# /boot/firmware is VFAT: ownership and mode come from the mount options
+sudo cp ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch${TouchdisplayVersion}.tft /boot/firmware/PekawayTouch${TouchdisplayVersion}.tft
+sudo cp ~/VAN_PI/VanPi-Core-OS/touchdisplay/PekawayTouch${TouchdisplayVersion}_180.tft /boot/firmware/PekawayTouch${TouchdisplayVersion}_180.tft
 
 # move the original pythonsqlite.db file to the correct location
 mv ~/VAN_PI/VanPi-Core-OS/misc/pythonsqlite.db ~/pekaway/pythonsqlite.db

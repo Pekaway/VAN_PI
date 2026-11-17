@@ -10,7 +10,7 @@ Adafruit-PureIO
 adafruit-python-shell
 args
 binho-host-adapter
-bleak
+bleak>=0.20,<4
 bottle
 certifi
 chardet
@@ -24,10 +24,12 @@ gatt
 gpiozero
 idna
 lgpio
+paho-mqtt>=2,<3
 pexpect
 pigpio
 pip
 ptyprocess
+pycairo
 pycryptodomex
 pyftdi
 PyGObject

@@ -1,570 +1,857 @@
 #!/bin/bash
+# Update an existing VanPi installation. Run as pi, with passwordless sudo.
+# Dashboard entry point: bash updatescript.sh node-red-auto-update
+# Keep this file self-contained: the dashboard downloads only this script.
 
-########################################################
-#														
-# This script will update your existing VanPi OS 		
-# to the latest release from the Pekaway VanPi server!	
-# Simply download the script to your VanPi OS and		
-# execute it.											
-# (see https://github.com/Pekaway/VAN_PI for details)
-#
-########################################################
+set -Eeuo pipefail
+umask 022
 
-# define variables
+Version='v2.1.2'
+NSPanelVersion='0.0.1'
+TouchdisplayVersion='2.1.0'
 Server='https://raw.githubusercontent.com/Pekaway/VAN_PI/main/VanPi-Core-OS/'
-ServerFiles='https://github.com/Pekaway/VAN_PI/raw/main/VanPi-Core-OS/'
 LfsServerFiles='https://media.githubusercontent.com/media/Pekaway/VAN_PI/main/VanPi-Core-OS/'
-Version='v2.1.0'		### <--- set new version number VanPi OS
-NSPanelVersion='0.0.1'	### <--- set new version number NSPanel
-TouchdisplayVersion='2.0.4'	### <--- set new version number Touchdisplay
-currentVersion=`cat ~/pekaway/version`
+PekawayDir="$HOME/pekaway"
+NodeRedDir="$HOME/.node-red"
+Progress='/var/log/pekaway-update_progress.log'
+MIN_KERNEL_VERSION='6.1'
+MIN_PYTHON_VERSION='3.11'
+MIN_LOG_FREE_KIB=16384
+NODE_RED_HEALTH_TIMEOUT=240
+# A line containing this marker in /boot/firmware/config.txt disables the
+# boot configuration merge; the file is then left exactly as it is.
+BOOT_CONFIG_OPT_OUT='VANPI_KEEP_BOOT_CONFIG'
+# boot_config.txt settings which are not added to existing installations,
+# because they change visible behaviour (CPU clock, HDMI output).
+BOOT_CONFIG_SKIP='arm_freq arm_freq_min hdmi_blanking'
+currentStep=0
+steps=13
+AutoUpdate=false
+NodeRedWasActive=false
+NodeRedStopped=false
+UpdateComplete=false
+StageDir=''
+BackupDir=''
+LOG_FILE=''
+declare -a ChangedTargets=()
+declare -a PackageFailures=()
+declare -A BackedUp=()
+PythonFiles=(
+    data/ads_py/simplelevel.py data/ads_py/web2.py data/ds18b20_py/ds18b20.py
+    data/ble_py/bleMppt.py data/ble_py/bleRuuvi.py data/ble_py/bleShunt.py
+    data/ble_py/pu_ble_mqtt.py data/ble_py/jbd_bms_reader2.py
+    data/mpu_py/mpuAngle.py data/bmi270_project/bmiAngle.py)
 
-# Define the file for logrotate and the desired line value
-LOGROTATE_CONFIG_FILE="/etc/logrotate.conf"
-LOGROTATE_TARGET_KEY="maxsize"
-LOGROTATE_TARGET_VALUE="60M"
-# Define the file for log2ram and the desired line value
-LOG2RAM_CONFIG_FILE="/etc/log2ram.conf"
-LOG2RAM_TARGET_KEY="LOG_DISK_SIZE"
-LOG2RAM_TARGET_VALUE="256M"
+die() { echo "Error: $*" >&2; exit 1; }
+warn() { echo "Warning: $*" >&2; }
 
-# prepare variables to be compared
-VersionToCheck='v2.0.0' # Version that has relevant changes in update script
-# (if current version number is below that number than this script will execute without the need for confirmation)
-# (script will not ask for confirmation if started from Node-RED dashboard directly)
-
-
-# truncate log folder to make space
-# 1) Trim big logs first
-# 2) If still almost full, aggressively trim the largest files
-# 3) Try to rotate logs (best effort)
-
-echo "checking space in log folder..."
-
-sudo bash -c '
-find /var/log -type f -size +2M -exec truncate -s 0 {} \;
-
-usage=$(df --output=pcent /var/log | tail -n1 | tr -dc "0-9")
-if [ "$usage" -ge 98 ]; then
-  echo "/var/log still at ${usage}%, trimming largest files..."
-  # take top 5 largest files and truncate them
-  find /var/log -type f -printf "%s %p\n" \
-    | sort -nr \
-    | head -n 5 \
-    | awk "{print \$2}" \
-    | while read -r f; do
-        truncate -s 0 "$f" || true
-      done
-fi
-
-logrotate -f /etc/logrotate.conf || true
-'
-echo "done, starting real update"
-
-# create file for progressbar in NR dashboard
-Progress=/var/log/pekaway-update_progress.log
-sudo truncate -s 0 ${Progress}
-sudo chmod 0666 ${Progress}
-echo "PID="$$ | sudo tee ${Progress} # get the PID
-# Initialize current step
-currentStep=1
-# Dynamically count total steps, subtracting 2 for non-literal steps
-steps=$(grep -o 'show_progress' "$0" | wc -l)
-steps=$((steps - 3))
-
-# Function to display progress
-show_progress() {
-    echo "Step $currentStep/$steps: $1" | sudo tee ${Progress}
-    ((currentStep++))
-    sleep 1
+record_package_failure() {
+    local message=$1
+    PackageFailures+=("$message")
+    if ! printf '%s\n' "$message" >> "$BackupDir/package-failures.log"; then
+        warn 'Could not write the package warnings file; keeping warnings in memory.'
+    fi
+    warn "$message; the update will continue."
 }
 
-sleep 7
-show_progress "comparing versions"
-
-# create logfile and make it writable
-LOG_FILE=/var/log/pekaway-update_$(date +"%Y_%m_%d-%H_%M").log
-sudo touch ${LOG_FILE}
-sudo chmod 0666 ${LOG_FILE}
-
-exec 3<&1
-coproc mytee { tee ${LOG_FILE} >&3;  }
-exec >&${mytee[1]} 2>&1
-
-# Remove the 'v' prefix and split into components
-VersionSubstring=${Version#*v}
-currentVersionSubstring=${currentVersion#*v}
-
-IFS='.' read -ra version_array <<< "$VersionSubstring"
-IFS='.' read -ra currentVersion_array <<< "$currentVersionSubstring"
-
-# Extract components as integers
-newVersion1=${version_array[0]}
-newVersion2=${version_array[1]}
-newVersion3=${version_array[2]}
-
-currentVersion1=${currentVersion_array[0]}
-currentVersion2=${currentVersion_array[1]}
-currentVersion3=${currentVersion_array[2]}
-
-echo "---------------------------------------------------------------------------------------------------"
-echo "#-#-#-#-# This script needs to be run as a sudo user. Press CTRL+C to abort at any time. #-#-#-#-# "
-echo "              (Not with sudo command, but the user needs permissions to use sudo)"
-echo "---------------------------------------------------------------------------------------------------"
-echo -e "logfile will be at ${LOG_FILE}"
-echo "---------------------------------------------------------------------------------------------------"
-
-#####################################################
-# Compare OS version and kernel version
-#
-# Get the Debian codename from /etc/os-release
-OS_CODENAME=$(grep "VERSION_CODENAME" /etc/os-release | cut -d'=' -f2)
-
-# Get the current kernel version
-KERNEL_VERSION=$(uname -r | cut -d'-' -f1)
-
-# Get the current Python version
-PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
-
-# Define the minimum required OS version (Debian Bookworm) and kernel version
-MIN_VERSION="bookworm"
-MIN_KERNEL_VERSION="6.1"
-
-# Function to compare two version numbers
-version_greater_equal() {
-    # Compare version numbers
-    [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" == "$2" ]
-}
-
-# Function to compare OS versions using codename
-compare_os_versions() {
-    # Array of Debian codenames in chronological order
-    versions=("buster" "bullseye" "bookworm" "trixie")
-
-    # Find the index of current and minimum versions
-    for i in "${!versions[@]}"; do
-        if [[ "${versions[$i]}" == "$1" ]]; then
-            current_index=$i
-        fi
-        if [[ "${versions[$i]}" == "$2" ]]; then
-            min_index=$i
-        fi
-    done
-
-    # Compare the index values to determine if an update is needed
-    if [[ "$current_index" -lt "$min_index" ]]; then
-        echo "Error: System is running $1. Please upgrade to $2 or later." | sudo tee ${Progress}
-        exit 1
+report_package_failures() {
+    local line
+    if (( ${#PackageFailures[@]} > 0 )); then
+        echo 'Package installation and runtime warnings:'
+        for line in "${PackageFailures[@]}"; do
+            printf '  - %s\n' "$line"
+        done
+        echo "Warning file, if writable: $BackupDir/package-failures.log; full output: $LOG_FILE"
     fi
 }
 
-# Check OS version
-compare_os_versions "$OS_CODENAME" "$MIN_VERSION"
+write_progress() {
+    local message=$1 fallback="$BackupDir/update-progress.log"
+    if printf '%s\n' "$message" | sudo -n tee "$Progress"; then
+        return 0
+    fi
+    if [[ $Progress == "$fallback" ]]; then
+        warn "Could not write progress to $fallback; continuing without a progress file."
+        return 0
+    fi
+    warn "Could not write progress to $Progress; using $fallback. Dashboard progress may be unavailable."
+    Progress=$fallback
+    if ! printf '%s\n' "$message" | sudo -n tee "$Progress"; then
+        warn "Could not write progress to $fallback; continuing without a progress file."
+    fi
+    return 0
+}
 
-# Check Kernel version
-if ! version_greater_equal "$KERNEL_VERSION" "$MIN_KERNEL_VERSION"; then
-    echo "Error: Kernel version is $KERNEL_VERSION. Please upgrade to kernel $MIN_KERNEL_VERSION or newer." | sudo tee ${Progress}
-    exit 1
-fi
+show_progress() {
+    currentStep=$((currentStep + 1))
+    write_progress "Step $currentStep/$steps: $1"
+}
 
-# Check Python version
-if ! version_greater_equal "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"; then
-    echo "Your Python version is $PYTHON_VERSION. Please upgrade to Python $MIN_PYTHON_VERSION or newer." | sudo tee ${Progress}
-    exit 1
-fi
+log_free_kib() {
+    LC_ALL=C df -Pk -- "$1" | awk 'NR == 2 {print $4}'
+}
 
-echo "Your system is running Debian $OS_CODENAME, kernel $KERNEL_VERSION, and Python $PYTHON_VERSION, all of which are up-to-date."
-echo "Continuing..."
-#####################################################
-
-
-# Compare versions numerically
-if (( currentVersion1 < newVersion1 )); then
-    echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
-    needUpdate='true'
-elif (( currentVersion1 == newVersion1 && currentVersion2 < newVersion2 )); then
-    echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
-    needUpdate='true'
-elif (( currentVersion1 == newVersion1 && currentVersion2 == newVersion2 && currentVersion3 < newVersion3 )); then
-    echo "currentVersion ($currentVersion) is older than newVersion ($Version)"
-    needUpdate='true'
-elif (( currentVersion1 == newVersion1 && currentVersion2 == newVersion2 && currentVersion3 == newVersion3 )); then
-    echo "currentVersion ($currentVersion) is the same as newVersion ($Version)"
-    needUpdate='false'
-else
-    echo "currentVersion ($currentVersion) is newer than newVersion ($Version)"
-    needUpdate='false'
-fi
-
-# get confirmation to continue on manual update
-if [[ "$1" == "node-red-auto-update" ]] || [[ "$needUpdate" == 'true' ]]; then
-	echo -e "not asking for confirmation, proceeding automatically."
-else
-	while true; do
-		read -r -p "This will update to version ${Version}! Currently you are running version ${currentVersion}. Do you want to continue [y/n]" input
-		case $input in
-			  [yY][eE][sS]|[yY])
-					echo "Ok, proceeding..."
-					break;;
-			  [nN][oO]|[nN])
-					echo "Aborting... bye bye."
-					exit
-					;;
-			  *)
-					echo "Invalid input... please type 'y' (yes) or 'n' (no)"
-					;;
-		esac
-	done
-fi
-sleep 3
-show_progress "getting new files"
-
-# remove packages.txt and package.json if they already exist
-cd ~/pekaway
-rm -f updatescript.sh
-rm -f packages.txt
-rm -f package.json
-rm -f pip3list.txt
-rm -f VanPI_NSPANEL.tft
-rm -f autoexec.be
-rm -f /ads_py/simplelevel.py
-rm -f /ads_py/web2.py
-rm -f /ds18b20_py/ds18b20.py
-mkdir -p ~/pekaway/bmi270_project
-rm -f /bmi270_project/bmi270_demo
-
-sudo rm -f /boot/*.tft # delete old .tft for touchdisplay if it exists
-sudo rm -f /boot/firmware/*.tft # delete old .tft for touchdisplay if it exists
-
-#delete files to be replaced here (e.g. updates in scripts)
-#rm -f ~/pekaway/ble_py/supervolt_flybat.py
-
-# Switch to reliable DNS servers (Google DNS and Cloudflare DNS):
-echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
-echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf
-
-# Array to track failed downloads
-failed_downloads=()
-
-# Function for retry logic
-wget_retry() {
-    local url=$1
-    local max_retries=5
-    local count=0
-    until wget -N --no-use-server-timestamps "$url"; do
-        count=$((count + 1))
-        if [ $count -ge $max_retries ]; then
-            echo "Failed to download $url after $max_retries attempts."
-            failed_downloads+=("$url") # Log the failed URL
-            return 1
+prepare_log_storage() {
+    local log_dir=$1 free file relative destination log_dev backup_dev
+    echo "Preparing log storage at $log_dir before starting the update."
+    # Vacuum archived journals only; never truncate active binary journal files.
+    if command -v journalctl >/dev/null 2>&1; then
+        sudo -n journalctl --vacuum-size=32M || warn 'Could not vacuum archived journals.'
+        # Even on a full filesystem, rotation may succeed and make the former
+        # active journal eligible for vacuuming. Failure is non-fatal.
+        sudo -n journalctl --rotate || warn 'Could not rotate the journal.'
+        sudo -n journalctl --vacuum-size=32M || warn 'Could not vacuum rotated journals.'
+    fi
+    free=$(log_free_kib "$log_dir") || free=0
+    [[ $free =~ ^[0-9]+$ ]] || free=0
+    if (( free < MIN_LOG_FREE_KIB )); then
+        echo "Log filesystem has ${free} KiB free; looking for large text logs to preserve and clear."
+        log_dev=$(stat -c %d -- "$log_dir") || log_dev=''
+        backup_dev=$(stat -c %d -- "$BackupDir") || backup_dev=''
+        if [[ -n $log_dev && -n $backup_dev && $log_dev != "$backup_dev" ]]; then
+            while IFS= read -r -d '' file; do
+                relative=${file#"$log_dir"/}
+                destination="$BackupDir/log-recovery/$relative"
+                if sudo -n mkdir -p -- "$(dirname "$destination")" && \
+                   sudo -n cp -p -- "$file" "$destination" && \
+                   sudo -n truncate -s 0 -- "$file"; then
+                    echo "Saved and cleared $file (backup: $destination)."
+                else
+                    warn "Could not preserve and clear $file."
+                fi
+                free=$(log_free_kib "$log_dir") || free=0
+                [[ $free =~ ^[0-9]+$ ]] || free=0
+                (( free < MIN_LOG_FREE_KIB )) || break
+            done < <(sudo -n find "$log_dir" -xdev -type f -size +1M \
+                ! -path "$log_dir/journal/*" \
+                \( -name '*.log' -o -name '*.log.1' -o -name 'syslog' -o -name 'syslog.1' \) -print0)
+        else
+            warn 'Log backup is not on a separate filesystem; skipping text-log clearing.'
         fi
-        echo "Retrying download: $url ($count/$max_retries)..."
+    fi
+    free=$(log_free_kib "$log_dir") || free=0
+    [[ $free =~ ^[0-9]+$ ]] || free=0
+    if (( free >= MIN_LOG_FREE_KIB )); then
+        if [[ -x /usr/sbin/logrotate && -f /etc/logrotate.conf ]]; then
+            sudo -n /usr/sbin/logrotate -f /etc/logrotate.conf || warn 'Log rotation did not complete; see the maintenance log.'
+        else
+            warn 'logrotate or its configuration is unavailable.'
+        fi
+    else
+        warn "Log filesystem still has only ${free} KiB free; update logs will also be stored in the backup directory."
+    fi
+    echo "Log storage preparation finished; $(log_free_kib "$log_dir" || echo unknown) KiB free."
+}
+
+normalize_version() {
+    local value=${1//$'\r'/}
+    if [[ $value =~ ^[bv]?([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+        printf '%d.%d.%d\n' "$((10#${BASH_REMATCH[1]}))" \
+            "$((10#${BASH_REMATCH[2]}))" "$((10#${BASH_REMATCH[3]}))"
+    else
+        return 1
+    fi
+}
+
+version_greater_equal() {
+    [[ $(printf '%s\n' "$1" "$2" | sort -V | head -n 1) == "$2" ]]
+}
+
+confirm() {
+    local answer
+    [[ -t 0 ]] || die 'Confirmation requires a terminal; use node-red-auto-update for dashboard updates.'
+    while read -r -p "$1 [y/n] " answer; do
+        case "$answer" in
+            [yY]|[yY][eE][sS]) return 0 ;;
+            [nN]|[nN][oO]) return 1 ;;
+        esac
+    done
+    return 1
+}
+
+backup_target() {
+    local target=$1
+    [[ ${BackedUp[$target]:-} ]] && return 0
+    if [[ -e $target || -L $target ]]; then
+        sudo -n mkdir -p -- "$BackupDir/files$(dirname "$target")"
+        sudo -n cp -a -- "$target" "$BackupDir/files$target"
+        BackedUp[$target]=existing
+    else
+        BackedUp[$target]=missing
+    fi
+    ChangedTargets+=("$target")
+}
+
+install_managed() {
+    local source=$1 target=$2 mode=${3:-0644} owner=${4:-user}
+    local temporary="${target}.vanpi-update.$$"
+    backup_target "$target"
+    if [[ $owner == root || $owner == firmware ]]; then
+        sudo -n mkdir -p -- "$(dirname "$target")"
+        if [[ $owner == firmware ]]; then
+            # VFAT ownership and mode come from mount options. Copy content only.
+            sudo -n cp -- "$source" "$temporary"
+        else
+            sudo -n install -m "$mode" -- "$source" "$temporary"
+        fi
+        sudo -n mv -f -- "$temporary" "$target"
+    else
+        mkdir -p -- "$(dirname "$target")"
+        install -m "$mode" -- "$source" "$temporary"
+        mv -f -- "$temporary" "$target"
+    fi
+}
+
+finish() {
+    local status=$? target index
+    trap - EXIT ERR INT TERM
+    set +e
+    if (( status != 0 )) && [[ $UpdateComplete != true ]]; then
+        echo "Update failed. Restoring managed files from $BackupDir."
+        if [[ $NodeRedStopped == true ]]; then
+            sudo -n systemctl stop nodered.service || warn 'Could not stop Node-RED before restoring files.'
+        fi
+        # APT/pip/npm changes are not transactional; keep their full output in the log.
+        for ((index=${#ChangedTargets[@]}-1; index>=0; index--)); do
+            target=${ChangedTargets[index]}
+            sudo -n rm -f -- "${target}.vanpi-update.$$"
+            if [[ ${BackedUp[$target]} == existing ]]; then
+                if [[ $target == /boot/* ]]; then
+                    sudo -n cp -f --no-preserve=all -- "$BackupDir/files$target" "$target" || warn "Restore failed: $target"
+                else
+                    sudo -n cp -a --remove-destination -- "$BackupDir/files$target" "$target" || warn "Restore failed: $target"
+                fi
+            else
+                sudo -n rm -f -- "$target" || warn "Cleanup failed: $target"
+            fi
+        done
+        sudo -n systemctl daemon-reload
+        if [[ $NodeRedStopped == true && $NodeRedWasActive == true ]]; then
+            sudo -n systemctl start nodered.service || warn 'Could not restart the previous Node-RED installation.'
+        fi
+        sudo -n nginx -t && sudo -n systemctl reload nginx
+        sudo -n udevadm control --reload-rules
+        write_progress "Error: update failed; see $LOG_FILE"
+        echo 'Package changes may require repair; the OS version has not been advanced.'
+        report_package_failures
+    fi
+    if [[ -n $StageDir && $StageDir == "$PekawayDir"/.update-* && -d $StageDir ]]; then
+        rm -rf -- "$StageDir"
+    fi
+    exit "$status"
+}
+
+download_file() {
+    local relative=$1 kind=${2:-raw} destination="$StageDir/$1" base=$Server attempt
+    [[ $kind == lfs ]] && base=$LfsServerFiles
+    mkdir -p -- "$(dirname "$destination")"
+    for attempt in {1..5}; do
+        echo "Downloading $relative (attempt $attempt/5)"
+        if wget --quiet --timeout=60 --tries=1 -O "$destination.part" "${base}${relative}" \
+            && [[ -s $destination.part ]] \
+            && ! head -c 512 "$destination.part" | grep -aqE 'git-lfs.github.com/spec/v1|<!DOCTYPE html|<html'; then
+            mv -f -- "$destination.part" "$destination"
+            return 0
+        fi
+        rm -f -- "$destination.part"
         sleep 3
     done
+    die "Download failed or returned a pointer/error page: $relative"
 }
 
-echo "Pre-fetching DNS..."
-ping -c 1 $ServerFiles > /dev/null 2>&1
-ping -c 1 $LfsServerFiles > /dev/null 2>&1
-sleep 1
+validate_downloads() {
+    python3 - "$StageDir" "$TouchdisplayVersion" <<'PY'
+import ast
+import json
+import pathlib
+import sqlite3
+import sys
 
-# Download files with retries
-echo "Downloading new files..."
-wget_retry "${ServerFiles}packages.txt"
-sleep 1
-wget_retry "${ServerFiles}node-red/package.json"
-sleep 1
-wget_retry "${ServerFiles}piplist.txt"
-sleep 1
-wget_retry "${ServerFiles}data/userdata/NSPanel/VanPI_NSPANEL.tft"
-sleep 1
-wget_retry "${ServerFiles}data/userdata/NSPanel/autoexec.be"
-sleep 1
-wget_retry "${ServerFiles}data/ads_py/simplelevel.py"
-sleep 1
-wget_retry "${ServerFiles}data/ads_py/web2.py"
-sleep 1
-wget_retry "${ServerFiles}data/ds18b20_py/ds18b20.py"
-sleep 1
-wget_retry "${ServerFiles}data/bmi270_project/bmi270_demo"
-sleep 1
-wget_retry "${ServerFiles}data/ci2mqtt/ci_mqtt_bridge"
-sleep 1
-wget_retry "${ServerFiles}data/ci2mqtt/.env"
-sleep 1
-wget_retry "${ServerFiles}misc/boot_config.txt"
-sleep 1
-wget_retry "${ServerFiles}misc/98-pekaway-tty.rules"
-sleep 1
-wget_retry "${ServerFiles}nginx/pekaway1"
-sleep 1
-wget_retry "${ServerFiles}misc/pythonsqlite.db"
-sleep 1
-wget_retry "${ServerFiles}touchdisplay/PekawayTouch.tft"
-sleep 1
+root = pathlib.Path(sys.argv[1])
+for path in root.rglob('*.py'):
+    ast.parse(path.read_text(encoding='utf-8-sig'), filename=str(path))
+for name in ('node-red/package.json', 'node-red/flows_pekaway.json'):
+    with (root / name).open(encoding='utf-8-sig') as handle:
+        value = json.load(handle)
+    if name.endswith('package.json'):
+        if not isinstance(value, dict) or not isinstance(value.get('dependencies'), dict):
+            raise SystemExit('Downloaded package.json has no dependencies object')
+    else:
+        if not isinstance(value, list) or not value:
+            raise SystemExit('Downloaded flows must be a non-empty array')
+        ids = [node.get('id') for node in value if isinstance(node, dict)]
+        if len(ids) != len(value) or any(not isinstance(i, str) or not i for i in ids) or len(set(ids)) != len(ids):
+            raise SystemExit('Downloaded flows contain invalid or duplicate IDs')
+for name in (f'touchdisplay/PekawayTouch{sys.argv[2]}.tft',
+             f'touchdisplay/PekawayTouch{sys.argv[2]}_180.tft',
+             'data/userdata/NSPanel/VanPI_NSPANEL.tft'):
+    if (root / name).stat().st_size < 1024:
+        raise SystemExit(f'Firmware download is suspiciously small: {name}')
+flows = json.loads((root / 'node-red/flows_pekaway.json').read_text(encoding='utf-8-sig'))
+if not any(isinstance(node, dict) and node.get('type') == 'http in' and node.get('method') == 'get'
+           and str(node.get('url', '')).strip('/') == 'names' and not node.get('disabled') for node in flows):
+    raise SystemExit('Downloaded flows lack the GET /names endpoint used for the Node-RED health check')
+for name in ('data/bmi270_project/bmi270_demo', 'data/ci2mqtt/ci_mqtt_bridge'):
+    with (root / name).open('rb') as handle:
+        if handle.read(4) != b'\x7fELF':
+            raise SystemExit(f'Invalid executable: {name}')
+database = sqlite3.connect((root / 'misc/pythonsqlite.db').absolute().as_uri() + '?mode=ro', uri=True)
+if database.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
+    raise SystemExit('Downloaded SQLite database failed integrity_check')
+database.close()
+print('Downloaded Python, JSON, firmware, binaries and database validated.')
+PY
+}
 
+merge_flows() {
+    python3 - "$1" "$2" "$3" <<'PY'
+import json
+import pathlib
+import re
+import sys
 
-# create files for mcp inputs if the don't exist
-# add json into files if they don't exist
-for i in {1..16}
-do
-	touch ~/pekaway/mcpinput"$i"
-	touch ~/pekaway/mcpinput"$i"_type
-	relays=$(cat < ~/pekaway/mcpinput"$i" |  jq 'has("relays")')
-	dimmers=$(cat < ~/pekaway/mcpinput"$i" |  jq 'has("dimmers")')
-	read -r type < ~/pekaway/mcpinput"$i"_type
-	echo "Relays$i: $relays"
-	echo "Dimmers$i: $dimmers"
-	echo "Type$i: $type"
-	if [[ "$type" != "switch" && "$type" != "button" ]]; then
-	    echo 'button' > ~/pekaway/mcpinput"$i"_type
+def load(name):
+    nodes = json.loads(pathlib.Path(name).read_text(encoding='utf-8-sig'))
+    if not isinstance(nodes, list):
+        raise SystemExit(f'Flows are not an array: {name}')
+    ids = [n.get('id') for n in nodes if isinstance(n, dict)]
+    if len(ids) != len(nodes) or any(not isinstance(i, str) or not i for i in ids) or len(ids) != len(set(ids)):
+        raise SystemExit(f'Flows contain invalid or duplicate IDs: {name}')
+    return nodes
+
+old, new = load(sys.argv[1]), load(sys.argv[2])
+old_by_id = {n['id']: n for n in old}
+new_by_id = {n['id']: n for n in new}
+core_ids = set(new_by_id)
+tabs = {n['id'] for n in old if n.get('type') == 'tab' and re.search(r'user\s*flow', n.get('label', ''), re.I)}
+selected = {n['id'] for n in old if n['id'] in tabs or n.get('z') in tabs}
+connection_types = {'mqtt-broker', 'tls-config', 'serial-port', 'zigbee2mqtt-server'}
+
+def config_node(node):
+    return not node.get('z') and node.get('type') != 'tab' and 'x' not in node and 'y' not in node
+
+def strings(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, list):
+        for item in value:
+            yield from strings(item)
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from strings(item)
+
+# Preserve connection configuration, including types which do not end in -config.
+selected.update(n['id'] for n in old if config_node(n) and
+                (n.get('type') in connection_types or n.get('type', '').endswith('-config')))
+pending = list(selected)
+while pending:
+    ident = pending.pop()
+    node = old_by_id[ident]
+    refs = list(strings(node))
+    kind = node.get('type', '')
+    if kind.startswith('subflow:'):
+        refs.append(kind[8:])
+    for ref in refs:
+        if ref in old_by_id and ref not in selected:
+            dependency = old_by_id[ref]
+            if config_node(dependency) or dependency.get('type') == 'subflow':
+                selected.add(ref)
+                pending.append(ref)
+    if node.get('type') == 'subflow':
+        for child in old:
+            if child.get('z') == ident and child['id'] not in selected:
+                selected.add(child['id'])
+                pending.append(child['id'])
+
+for ident in selected:
+    saved = old_by_id[ident]
+    if ident not in new_by_id:
+        new_by_id[ident] = saved
+    elif saved.get('type') in connection_types:
+        if new_by_id[ident].get('type') != saved.get('type'):
+            raise SystemExit(f'Configuration type conflict: {ident}')
+        new_by_id[ident] = {**new_by_id[ident], **saved}
+    elif saved != new_by_id[ident] and (ident in tabs or saved.get('z') in tabs):
+        raise SystemExit(f'User flow ID conflicts with a new core node: {ident}')
+
+# Keep new core ordering; append preserved user nodes in their previous order.
+order = [n['id'] for n in new] + [n['id'] for n in old if n['id'] not in core_ids and n['id'] in selected]
+result = [new_by_id[ident] for ident in order]
+pathlib.Path(sys.argv[3]).write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+print(f'Prepared {len(result)} nodes; preserved {len(tabs)} user tabs and their dependencies.')
+PY
+}
+
+prepare_settings() {
+    node - "$1" "$2" <<'JS'
+const fs = require('fs');
+const vm = require('vm');
+const [input, output] = process.argv.slice(2);
+let source = fs.readFileSync(input, 'utf8').replace(/\r\n/g, '\n');
+new vm.Script(source, { filename: input });
+source = source.replace(/\n\/\/ BEGIN VANPI UPDATE SETTINGS\n[\s\S]*?\/\/ END VANPI UPDATE SETTINGS\n?/g, '\n');
+// Assign exported properties after the original object. Preserve arbitrary
+// user settings, comments and functions without rewriting JavaScript with sed.
+source = source.trimEnd() + `
+
+// BEGIN VANPI UPDATE SETTINGS
+;(() => {
+    const settings = module.exports;
+    settings.functionGlobalContext = {
+        ...(settings.functionGlobalContext || {}), zlib: require('zlib')
+    };
+    const stores = settings.contextStorage || {};
+    const name = typeof stores.default === 'string' ? stores.default : null;
+    const previous = (name ? stores[name] : stores.default) || {};
+    const persistent = {
+        ...previous, module: 'localfilesystem',
+        config: { ...(previous.config || {}), flushInterval: 3600 }
+    };
+    settings.contextStorage = name
+        ? { ...stores, [name]: persistent }
+        : { ...stores, default: persistent };
+})();
+// END VANPI UPDATE SETTINGS
+`;
+new vm.Script(source, { filename: output });
+fs.writeFileSync(output, source, 'utf8');
+JS
+}
+
+merge_boot_config() {
+    # Adds settings from boot_config.txt which are missing in the existing
+    # config.txt. Existing lines are never changed or removed: a different
+    # user value, or a setting the user has commented out, is kept and reported.
+    python3 - "$1" "$2" "$3" "$Version" "$BOOT_CONFIG_OPT_OUT" "$BOOT_CONFIG_SKIP" <<'PY'
+import pathlib
+import re
+import sys
+
+current_path, reference_path, output_path, version, opt_out = sys.argv[1:6]
+skip = set(sys.argv[6].lower().split())
+raw = pathlib.Path(current_path).read_bytes()
+current = raw.decode('utf-8', errors='surrogateescape')
+reference = pathlib.Path(reference_path).read_text(encoding='utf-8-sig')
+newline = '\r\n' if '\r\n' in current else '\n'
+# Commented-out examples in the stock Raspberry Pi OS file are not user decisions.
+stock_comments = {'dtparam=i2c_arm=on', 'dtparam=i2s=on', 'dtparam=spi=on', 'dtparam=audio=on'}
+
+def normalize(line):
+    name, sep, value = line.partition('=')
+    return f'{name.strip().lower()}={value.strip()}' if sep else line.strip()
+
+def entries(line):
+    name, sep, value = line.partition('=')
+    if not sep or not re.fullmatch(r'[A-Za-z0-9_.:-]+', name.strip()):
+        return []
+    name, value = name.strip().lower(), value.strip()
+    if name == 'dtoverlay':
+        overlay = value.split(',', 1)[0].strip().lower()
+        return [('dtoverlay', overlay)] if overlay else []
+    if name == 'dtparam':
+        return [('dtparam', part.split('=', 1)[0].strip().lower()) for part in value.split(',') if part.strip()]
+    return [('key', name)]
+
+def parse(text):
+    section = 'all'
+    for line in text.splitlines():
+        line = line.strip()
+        header = re.fullmatch(r'\[(.+)\]', line)
+        if header:
+            section = header.group(1).strip().lower()
+            continue
+        if line:
+            yield section, line
+
+if opt_out in current:
+    pathlib.Path(output_path).write_bytes(raw)
+    print(f'Boot configuration contains {opt_out}; leaving it unchanged.')
+    raise SystemExit(0)
+
+active, disabled, exact = {}, {}, set()
+for section, line in parse(current):
+    if line.startswith('#'):
+        content = line.lstrip('#').strip()
+        if section == 'all' and normalize(content) in stock_comments:
+            continue
+        for entry in entries(content):
+            disabled.setdefault(entry, set()).add(section)
+    else:
+        exact.add((section, normalize(line)))
+        for entry in entries(line):
+            active.setdefault(entry, {}).setdefault(section, line)
+
+def relevant(sections, section):
+    # [all] applies to every board; a board section only to that board.
+    return set(sections) if section == 'all' else set(sections) & {section, 'all'}
+
+additions, kept = {}, []
+for section, line in parse(reference):
+    if line.startswith('#') or (section, normalize(line)) in exact:
+        continue
+    found = entries(line)
+    if not found:
+        continue
+    if any(kind == 'key' and name in skip for kind, name in found):
+        if not any(relevant(active.get(entry, {}), section) for entry in found):
+            kept.append(f'[{section}] not added automatically: "{line}"')
+        continue
+    missing = []
+    for entry in found:
+        where = relevant(active.get(entry, {}), section)
+        if where:
+            existing = active[entry][sorted(where)[0]]
+            if normalize(existing) != normalize(line):
+                kept.append(f'[{section}] kept existing "{existing}" (VanPi default: "{line}")')
+        elif relevant(disabled.get(entry, set()), section):
+            kept.append(f'[{section}] kept disabled by user: "{line}"')
+        else:
+            missing.append(entry)
+    if not missing:
+        continue
+    if line.split('=', 1)[0].strip().lower() == 'dtparam' and len(missing) < len(found):
+        names = {name for _, name in missing}
+        line = 'dtparam=' + ','.join(p.strip() for p in line.split('=', 1)[1].split(',')
+                                     if p.split('=', 1)[0].strip().lower() in names)
+    additions.setdefault(section, []).append(line)
+
+for message in kept:
+    print('Boot configuration:', message)
+if not additions:
+    pathlib.Path(output_path).write_bytes(raw)
+    print('Boot configuration already contains all VanPi settings.')
+    raise SystemExit(0)
+
+block = ['', f'# BEGIN VanPi {version}: settings added from boot_config.txt']
+for section, lines in additions.items():
+    block.append(f'[{section}]')
+    if lines[0].split('=', 1)[0].strip().lower() == 'dtparam':
+        # A dtparam after a dtoverlay belongs to that overlay; an empty
+        # dtoverlay= ends the overlay scope so it applies to the base DT.
+        block.append('dtoverlay=')
+    block.extend(lines)
+    print(f'Boot configuration: adding to [{section}]: ' + '; '.join(lines))
+if list(additions)[-1] != 'all':
+    block.append('[all]')
+block += [f'# END VanPi {version}', '']
+text = current if current.endswith(('\n', '\r')) or not current else current + newline
+pathlib.Path(output_path).write_bytes((text + newline.join(block)).encode('utf-8', errors='surrogateescape'))
+PY
+}
+
+node_red_health_url() {
+    # Derive the HTTP node endpoint from settings.js; fall back to the defaults.
+    (cd "$NodeRedDir" && node -e '
+const s = require("./settings.js");
+const port = Number.parseInt(s.uiPort, 10) || 1880;
+let root = typeof s.httpNodeRoot === "string" ? s.httpNodeRoot : (typeof s.httpRoot === "string" ? s.httpRoot : "/");
+root = ("/" + root + "/").replace(/\/+/g, "/");
+process.stdout.write(`${s.https ? "https" : "http"}://127.0.0.1:${port}${root}names`);
+' 2>/dev/null) || printf 'http://127.0.0.1:1880/names'
+}
+
+node_red_responds() {
+    wget --quiet --no-check-certificate --timeout=5 --tries=1 -O /dev/null "$1"
+}
+
+wait_for_node_red() {
+    # The service being active is not enough: wait until the flows answer HTTP.
+    local url elapsed=0
+    url=$(node_red_health_url)
+    echo "Waiting up to ${NODE_RED_HEALTH_TIMEOUT}s for Node-RED flows at $url"
+    while (( elapsed < NODE_RED_HEALTH_TIMEOUT )); do
+        if sudo -n systemctl is-active --quiet nodered.service && node_red_responds "$url"; then
+            # Confirm once more to catch a crash directly after the flows started.
+            sleep 10
+            if sudo -n systemctl is-active --quiet nodered.service && node_red_responds "$url"; then
+                echo "Node-RED flows respond after about $((elapsed + 10))s."
+                return 0
+            fi
+        fi
+        sleep 5
+        elapsed=$((elapsed + 5))
+    done
+    sudo -n journalctl -u nodered.service -n 60 --no-pager || true
+    die "Node-RED flows did not respond at $url within ${NODE_RED_HEALTH_TIMEOUT}s."
+}
+
+prepare_python_requirements() {
+    python3 - "$1" "$2" <<'PY'
+import pathlib
+import re
+import sys
+
+# Supplied by APT (or installer tooling), not rebuilt from PyPI.
+system = {'python-apt', 'pygobject', 'pycairo', 'smbus', 'ssh-import-id',
+          'pip', 'setuptools', 'wheel', 'rpi-gpio', 'rpi-lgpio'}
+result = []
+for raw in pathlib.Path(sys.argv[1]).read_text(encoding='utf-8-sig').splitlines():
+    line = raw.split('#', 1)[0].strip()
+    if not line:
+        continue
+    match = re.match(r'^([A-Za-z0-9][A-Za-z0-9_.-]*)(?:\s|[<>=!~;\[]|$)', line)
+    if not match:
+        raise SystemExit(f'Unexpected requirement: {line}')
+    name = re.sub(r'[-_.]+', '-', match.group(1)).lower()
+    if name not in system and name != 'paho-mqtt':
+        result.append(line)
+result.append('paho-mqtt>=2,<3')
+pathlib.Path(sys.argv[2]).write_text('\n'.join(result) + '\n', encoding='utf-8')
+PY
+}
+
+install_apt_packages() {
+    local group=$1 package
+    shift
+    (( $# > 0 )) || return 0
+    if sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::='--force-confold' "$@"; then
+        return 0
     fi
-	if [[ "$relays" == "true" ]] 
-	then
-		if [[ "$dimmers" != "true" ]]; then	
-		input=$(jq ' . += {"dimmers":{"d1":false,"d2":false,"d3":false,"d4":false,"d5":false,"d6":false,"d7":false}}' ~/pekaway/mcpinput"$i")
-		echo "$input" > ~/pekaway/mcpinput"$i"
-		fi
-	elif [[ "$relays" != "true" ]]; then
-		echo '{"relays":{"one":false,"two":false,"three":false,"four":false,"five":false,"six":false,"seven":false,"eight":false},"dimmers":{"d1":false,"d2":false,"d3":false,"d4":false,"d5":false,"d6":false,"d7":false}}' > ~/pekaway/mcpinput"$i"
-	fi
-done
+    warn "APT $group batch failed; retrying packages individually."
+    for package in "$@"; do
+        if ! sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::='--force-confold' "$package"; then
+            record_package_failure "APT $group: $package"
+        fi
+    done
+}
 
-# create needed files if they dont exist
-touch ~/pekaway/combined_temp_chart
-touch ~/pekaway/combined_ruuvi_chart
-# create relayboard_core file if it doesn't exist with defgault value "false"
-FILE=~/pekaway/relayboard_core
-if [ ! -f "$FILE" ]; then
-    echo "false" > "$FILE"
-fi
-# Create Dimmy Pro RGBW definition files with JSON if they don't exist
-FILE1=~/pekaway/dimmyProRgbw1
-FILE2=~/pekaway/dimmyProRgbw2
+install_system_packages() {
+    if ! sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update; then
+        record_package_failure 'APT repository refresh failed; package lists may be outdated'
+    fi
+    # Keep the previous updater's OS upgrade behaviour, preserving local configs.
+    if ! sudo -n env DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::='--force-confold'; then
+        record_package_failure 'APT upgrade failed; see the full log for affected packages'
+    fi
+    local -a required=(python3-pip python3-apt python3-gi python3-gi-cairo python3-cairo
+        python3-smbus python3-dbus python3-dev python-is-python3 bluez can-utils
+        i2c-tools iw jq nginx mosquitto mosquitto-clients)
+    if ! python3 -c 'import RPi.GPIO' >/dev/null 2>&1; then
+        if grep -aq 'Raspberry Pi 5' /proc/device-tree/model; then
+            required+=(python3-rpi-lgpio)
+        else
+            required+=(python3-rpi.gpio)
+        fi
+    fi
+    install_apt_packages 'required' "${required[@]}"
 
-if [ ! -f "$FILE1" ]; then
-    echo '{"isRgbw": true, "name": "Dimmy Pro RGBW 1"}' > "$FILE1"
-fi
-if [ ! -f "$FILE2" ]; then
-    echo '{"isRgbw": true, "name": "Dimmy Pro RGBW 2"}' > "$FILE2"
-fi
-# create relayboard_core file if it doesn't exist with defgault value "false"
-FILE3=~/pekaway/trumaCi
-if [ ! -f "$FILE3" ]; then
-    echo "false" > "$FILE3"
-fi
+    # packages.txt is an image inventory, not an instruction to reinstall old
+    # kernels or foreign-architecture libraries on every Raspberry Pi.
+    if python3 - "$StageDir/packages.txt" "$StageDir/apt-missing.txt" "$BackupDir/packages-skipped.log" <<'PY'
+import apt
+import pathlib
+import re
+import subprocess
+import sys
 
-# move TouchDisplay .tft file to /boot to be able to use SD-card to update Touchdisplay
-sudo chown root:root PekawayTouch.tft # cannot preserve ownership in root directory
-sudo rm /boot/*.tft
-sudo rm /boot/firmware/*.tft
-sudo mv PekawayTouch.tft /boot/firmware/PekawayTouch${TouchdisplayVersion}.tft
-
-
-# move new files here
-mv -f ds18b20.py ~/pekaway/ds18b20_py/ds18b20.py
-mv -f simplelevel.py ~/pekaway/ads_py/simplelevel.py
-mv -f web2.py ~/pekaway/ads_py/web2.py
-mv -f bmi270_demo ~/pekaway/bmi270_project/bmi270_demo
-chmod 755 ~/pekaway/bmi270_project/bmi270_demo
-mv -f pythonsqlite.db ~/pekaway/pythonsqlite.db
-mkdir ~/pekaway/ci2mqtt
-mv -f ci_mqtt_bridge ~/pekaway/ci2mqtt/ci_mqtt_bridge
-chmod 755 ~/pekaway/ci2mqtt/ci_mqtt_bridge
-mv -f .env ~/pekaway/ci2mqtt/.env
-sudo chown root:root boot_config.txt
-sudo mv -f boot_config.txt /boot/firmware/config.txt
-sudo mv -f 98-pekaway-tty.rules /etc/udev/rules.d/98-pekaway-tty.rules
-sudo mv -f pekaway1 /etc/nginx/sites-available/pekaway1
-# create symlink for nginx pekaway1
-sudo ln -s /etc/nginx/sites-available/pekaway1 /etc/nginx/sites-enabled/pekaway1
-#mv supervolt_flybat.py ~/pekaway/ble_py/supervolt_flybat.py
-
-sleep 2
-# reload udev rules and nginx
-sudo udevadm control --reload-rules && sudo udevadm trigger
-sudo systemctl restart nginx
-sleep 1
-
-show_progress "installing packages"
-# copy NSPanel .tft file to ~/pekaway/userdata/NSPanel to show up in NR-Dashboard
-mkdir -p ~/pekaway/userdata/NSPanel
-cp -f VanPI_NSPANEL.tft ~/pekaway/userdata/NSPanel/VanPI_NSPANEL${NSPanelVersion}.tft
-cp -f autoexec.be ~/pekaway/userdata/NSPanel/autoexec.be
-
-# make a backup of the existing package.json and replace it with the new file
-cp ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json
-cp ~/pekaway/package.json ~/.node-red/package.json
-
-# Update package list
-sudo apt update
-
-# Upgrade all installed packages while keeping existing configuration files
-sudo apt upgrade -y -o Dpkg::Options::="--force-confold"
-
-# Install packages listed in ~/pekaway/packages.txt and keep old config files
-sudo apt install -y -o Dpkg::Options::="--force-confold" $(cat ~/pekaway/packages.txt)
-
-# Clean up unnecessary package files to free space
-sudo apt clean
-
-# Remove unused packages and dependencies
-sudo apt autoremove -y
-
-cd ~/.node-red
-
-# compare older package.json with new one and ask for merging
-echo "comparing original package.json with the new one:"
-sleep 3
-show_progress "checking package.json"
-
-extramodules=$(diff <(jq --sort-keys .dependencies ~/.node-red/package.json) \
-                    <(jq --sort-keys .dependencies ~/pekaway/nrbackups/package-backup.json) | grep '>')
-
-if [[ -n $extramodules ]]; then
-    echo -e "Your original package.json file has the following additonal modules listed:"
-    echo -e "$extramodules"
-
-    if [[ "$1" == "node-red-auto-update" ]] || [[ "$needUpdate" == 'true' ]]; then
-        echo -e "updating from Node-RED, adding additional lines automatically."
-        # merge to temp
-        jq -s '.[0] * .[1]' ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json > ~/pekaway/nrbackups/package1.json
-        # pretty print
-        jq . ~/pekaway/nrbackups/package1.json > ~/pekaway/nrbackups/pretty.json
-        # replace target (THIS is the missing write-back)
-        mv ~/pekaway/nrbackups/pretty.json ~/.node-red/package.json
-        # cleanup
-        rm -f ~/pekaway/nrbackups/package1.json
-        echo "Missing lines have been added to package.json"
-        echo "New package.json:"
-        cat ~/.node-red/package.json
+cache = apt.Cache()
+architecture = subprocess.check_output(['dpkg', '--print-architecture'], text=True).strip()
+installed = set(subprocess.check_output(
+    ['dpkg-query', '-W', '-f=${binary:Package}\t${db:Status-Status}\n'], text=True).splitlines())
+missing, skipped, seen = [], [], set()
+for raw in pathlib.Path(sys.argv[1]).read_text(encoding='utf-8-sig').splitlines():
+    package = raw.split('#', 1)[0].strip()
+    if not package or package in seen:
+        continue
+    seen.add(package)
+    if not re.fullmatch(r'[a-z0-9][a-z0-9+.-]*(?::[a-z0-9-]+)?', package):
+        raise SystemExit(f'Invalid APT package name: {package}')
+    base, _, arch = package.partition(':')
+    if arch and arch not in (architecture, 'all', 'native'):
+        skipped.append(f'{package}: foreign architecture')
+    elif re.match(r'^linux-(?:image|headers|kbuild)-[0-9]', base):
+        skipped.append(f'{package}: historical kernel; use the kernel metapackage')
+    elif f'{package}\tinstalled' in installed or f'{base}\tinstalled' in installed or f'{base}:{architecture}\tinstalled' in installed:
+        continue
+    elif re.match(r'^libcamera[0-9]', base):
+        # Old ABI packages can remain in the repository while requiring an IPA
+        # version replaced by a newer camera stack. Let camera applications pull
+        # in their matching libraries instead of replaying the image's ABI list.
+        skipped.append(f'{package}: historical camera ABI; resolved by camera application dependencies')
+    elif package not in cache or cache[package].candidate is None:
+        skipped.append(f'{package}: no installation candidate')
+    else:
+        missing.append(package)
+pathlib.Path(sys.argv[2]).write_text('\n'.join(missing) + ('\n' if missing else ''), encoding='utf-8')
+pathlib.Path(sys.argv[3]).write_text('\n'.join(skipped) + '\n', encoding='utf-8')
+print(f'APT inventory: {len(missing)} missing packages; {len(skipped)} skipped entries.')
+for item in skipped:
+    print('Skipped:', item)
+PY
+    then
+        local -a missing=()
+        mapfile -t missing < "$StageDir/apt-missing.txt"
+        install_apt_packages 'inventory' "${missing[@]}"
     else
-        while true; do
-            read -r -p "Do you want them to be added to the new package.json? [y/n]" input
-            case $input in
-                [yY][eE][sS]|[yY])
-                    # merge to temp
-                    jq -s '.[0] * .[1]' ~/.node-red/package.json ~/pekaway/nrbackups/package-backup.json > ~/pekaway/nrbackups/package-backup1.json
-                    # pretty print
-                    jq . ~/pekaway/nrbackups/package-backup1.json > ~/pekaway/nrbackups/pretty.json
-                    # keep a backup just in case
-                    mv ~/pekaway/nrbackups/package-backup.json ~/pekaway/package-backup.json
-                    # replace target
-                    mv ~/pekaway/nrbackups/pretty.json ~/.node-red/package.json
-                    # cleanup
-                    rm -f ~/pekaway/nrbackups/package1.json ~/pekaway/nrbackups/package-backup1.json 2>/dev/null
-                    echo "Missing lines have been added to package.json"
-                    echo "New ~/.node-red/package.json:"
-                    cat ~/.node-red/package.json
-                    break
-                    ;;
-                [nN][oO]|[nN])
-                    echo "No modules added to package.json, proceeding..."
-                    break
-                    ;;
-                *)
-                    echo "Invalid input... please type 'y' (yes) or 'n' (no)"
-                    ;;
-            esac
-        done
+        record_package_failure 'APT inventory could not be evaluated; see the full log'
     fi
-else
-    echo "modules are identical, proceeding..."
-fi
+    if ! sudo -n apt-get clean; then
+        record_package_failure 'APT cache cleanup failed'
+    fi
+    # Do not autoremove packages during an application update.
+}
 
+verify_python_runtime() {
+    "$@" - <<'PY'
+import importlib
+import importlib.metadata
+errors = []
+try:
+    import paho.mqtt.client as mqtt
+    version = importlib.metadata.version('paho-mqtt')
+    if version.split('.')[0] != '2':
+        raise ValueError(f'paho-mqtt 2.x required, got {version} from {mqtt.__file__}')
+    mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    print(f'Paho MQTT runtime OK; version {version} from {mqtt.__file__}')
+except Exception as exc:
+    errors.append(('paho-mqtt>=2,<3', exc))
+for name in ('bleak', 'ruuvitag_sensor.ruuvi', 'smbus2', 'pexpect', 'gi', 'cairo', 'bottle'):
+    try:
+        module = importlib.import_module(name)
+        if name == 'ruuvitag_sensor.ruuvi' and not hasattr(module.RuuviTagSensor, 'get_data_async'):
+            raise ValueError('RuuviTagSensor does not provide get_data_async')
+    except Exception as exc:
+        errors.append((name, exc))
+if errors:
+    for name, exc in errors:
+        print(f'PACKAGE WARNING: {name}: {type(exc).__name__}: {exc}')
+    raise SystemExit(1)
+print('Python runtime OK')
+PY
+}
 
-#install npm modules from package.json
-sleep 3
-show_progress "executing npm install"
-echo "installing npm modules, please stand by..."
-npm install
-echo "done"
+check_python_runtime() {
+    local scope=$1 line output found=false
+    shift
+    if output=$(verify_python_runtime "$@" 2>&1); then
+        printf '%s\n' "$output"
+        return 0
+    fi
+    printf '%s\n' "$output"
+    while IFS= read -r line || [[ -n $line ]]; do
+        if [[ $line == 'PACKAGE WARNING: '* ]]; then
+            record_package_failure "Python $scope: ${line#PACKAGE WARNING: }"
+            found=true
+        fi
+    done <<< "$output"
+    if [[ $found == false ]]; then
+        record_package_failure "Python $scope runtime verification failed; see the full log"
+    fi
+}
 
-cd ~/pekaway
-# Install/update python modules locally (user pi) and globally (root)
-sleep 3
-show_progress "checking python modules"
-echo "Installing Python modules with --break-system-packages, please stand by..."
-sudo -H pip3 install --upgrade pip --break-system-packages
-sudo pip3 install -r ~/pekaway/piplist.txt --break-system-packages
-sudo pip3 install bottle --break-system-packages
-pip3 install -r ~/pekaway/piplist.txt --break-system-packages
-pip3 install bottle --break-system-packages
-echo "Done."
-
-sleep 3
-show_progress "checking logrotate/log2ram"
-# Check logrotate configuration
-# Check if the file exists
-if [ ! -f "$LOGROTATE_CONFIG_FILE" ]; then
-    echo "The file $LOGROTATE_CONFIG_FILE does not exist. Exiting this step."
-    exit 0
-fi
-
-# Check if the line exists and matches the target value
-if grep -q "^$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE" "$LOGROTATE_CONFIG_FILE"; then
-    echo "The line '$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE' is already set and correct."
-else
-    # Check if the line exists with a different value
-    if grep -q "^$LOGROTATE_TARGET_KEY " "$LOGROTATE_CONFIG_FILE"; then
-        echo "The line '$LOGROTATE_TARGET_KEY' exists but has a different value. Updating it..."
-        sudo sed -i "s|^$LOGROTATE_TARGET_KEY .*|$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE|" "LOGROTATE_$CONFIG_FILE"
+install_pip_requirements() {
+    local scope=$1 requirement
+    local -a command=(python3 -m pip install --break-system-packages --upgrade)
+    if [[ $scope == root ]]; then
+        command=(sudo -n -H "${command[@]}")
     else
-        # Add the line if it doesn't exist
-        echo "The line '$LOGROTATE_TARGET_KEY' is missing. Adding it..."
-        sudo echo "$LOGROTATE_TARGET_KEY $LOGROTATE_TARGET_VALUE" >> "$LOGROTATE_CONFIG_FILE"
+        command+=(--user)
     fi
-fi
-
-
-# Check log2ram configuration
-# Check if the file exists
-if [ ! -f "$LOG2RAM_CONFIG_FILE" ]; then
-    echo "The file $LOG2RAM_CONFIG_FILE does not exist. Exiting this step."
-    exit 0
-fi
-
-# Check if the line exists and matches the target value
-if grep -q "^$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE" "$LOG2RAM_CONFIG_FILE"; then
-    echo "The line '$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE' is already set and correct."
-else
-    # Check if the line exists with a different value
-    if grep -q "^$LOG2RAM_TARGET_KEY=" "$LOG2RAM_CONFIG_FILE"; then
-        echo "The line '$LOG2RAM_TARGET_KEY' exists but has a different value. Updating it..."
-        sudo sed -i "s|^$LOG2RAM_TARGET_KEY=.*|$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE|" "$LOG2RAM_CONFIG_FILE"
-    else
-        # Add the line if it doesn't exist
-        echo "The line '$LOG2RAM_TARGET_KEY' is missing. Adding it..."
-        sudo echo "$LOG2RAM_TARGET_KEY=$LOG2RAM_TARGET_VALUE" >> "$LOG2RAM_CONFIG_FILE"
+    if "${command[@]}" -r "$StageDir/python-requirements.txt"; then
+        return 0
     fi
-fi
+    warn "pip $scope batch failed; retrying requirements individually."
+    while IFS= read -r requirement || [[ -n $requirement ]]; do
+        [[ -n $requirement ]] || continue
+        if ! "${command[@]}" "$requirement"; then
+            record_package_failure "pip $scope: $requirement"
+        fi
+    done < "$StageDir/python-requirements.txt"
+}
 
-# Restart log2ram
-echo "Restarting log2ram..."
-#sudo systemctl restart log2ram && echo "log2ram restarted successfully." || echo "Failed to restart log2ram."
+install_python_packages() {
+    prepare_python_requirements "$StageDir/piplist.txt" "$StageDir/python-requirements.txt"
+    # Install in /usr/local, leaving the Debian-owned paho 1.x files intact.
+    # paho has no dependencies. Limit --ignore-installed deliberately to it.
+    if ! sudo -n -H python3 -m pip install --break-system-packages --ignore-installed --no-deps 'paho-mqtt>=2,<3'; then
+        warn 'Initial Paho MQTT installation failed; the requirements installation and runtime checks will retry it.'
+    fi
+    install_pip_requirements root
+    # Update stale user-site packages which otherwise shadow system packages.
+    install_pip_requirements user
+    check_python_runtime root sudo -n -H python3
+    check_python_runtime user python3
+}
 
-# Intalling powersave mode systemd service for wifi connection 
-echo "Installing powersave mode for wifi connection"
-show_progress "checking powersave mode for wifi"
+install_node_red_modules() {
+    install_managed "$StageDir/package.json" "$NodeRedDir/package.json"
+    if ! (cd "$NodeRedDir" && npm install --no-audit --no-fund); then
+        record_package_failure 'npm install failed; see the full log for affected modules'
+    fi
+    if ! (cd "$NodeRedDir" && npm ls --omit=dev --depth=0); then
+        record_package_failure 'npm dependency verification failed; see the full log for affected modules'
+    fi
+}
 
-SERVICE_NAME="wifi-powersave-off.service"
-SERVICE_PATH="/etc/systemd/system/$SERVICE_NAME"
+prepare_input_defaults() {
+    local i file type prepared
+    for i in {1..16}; do
+        file="$PekawayDir/mcpinput$i"
+        prepared="$StageDir/mcpinput$i"
+        # Preserve existing mappings and only add absent keys. Invalid non-empty
+        # configuration is an error rather than permission to erase user data.
+        python3 - "$file" "$prepared" <<'PY'
+import json
+import pathlib
+import sys
 
-# Detect RPi model
-PI_MODEL=$(tr -d '\0' < /proc/device-tree/model)
-echo "Detected model: $PI_MODEL"
+path = pathlib.Path(sys.argv[1])
+data = json.loads(path.read_text()) if path.exists() and path.read_text().strip() else {}
+if not isinstance(data, dict):
+    raise SystemExit(f'Input configuration must be an object: {path}')
+data.setdefault('relays', dict.fromkeys(('one','two','three','four','five','six','seven','eight'), False))
+data.setdefault('dimmers', {f'd{i}': False for i in range(1, 8)})
+pathlib.Path(sys.argv[2]).write_text(json.dumps(data) + '\n')
+PY
+        install_managed "$prepared" "$file"
+        type=''
+        if [[ -f ${file}_type ]]; then type=$(tr -d '\r\n' < "${file}_type"); fi
+        if [[ $type != switch && $type != button ]]; then
+            printf 'button\n' > "$StageDir/input_type"
+            install_managed "$StageDir/input_type" "${file}_type"
+        fi
+    done
+    local name value
+    for name in combined_temp_chart combined_ruuvi_chart relayboard_core trumaCi dimmyProRgbw1 dimmyProRgbw2; do
+        [[ -e $PekawayDir/$name ]] && continue
+        case "$name" in
+            relayboard_core|trumaCi) value='false' ;;
+            dimmyProRgbw1) value='{"isRgbw":true,"name":"Dimmy Pro RGBW 1"}' ;;
+            dimmyProRgbw2) value='{"isRgbw":true,"name":"Dimmy Pro RGBW 2"}' ;;
+            *) value='' ;;
+        esac
+        printf '%s\n' "$value" > "$StageDir/default"
+        install_managed "$StageDir/default" "$PekawayDir/$name"
+    done
+}
 
-# Optional: skip for non-Raspberry Pi systems
-if [[ "$PI_MODEL" != Raspberry* ]]; then
-    echo "Not a Raspberry Pi. Skipping WiFi power save config."
-    exit 0
-fi
+configure_logs_and_wifi() {
+    local file
+    for file in /etc/logrotate.conf /etc/log2ram.conf; do
+        if [[ ! -f $file ]]; then
+            warn "$file is absent; skipping this optional configuration."
+            continue
+        fi
+        python3 - "$file" "$StageDir/log-config" <<'PY'
+import pathlib
+import re
+import sys
 
-# Check if service already exists
-if [ ! -f "$SERVICE_PATH" ]; then
-    echo "Installing $SERVICE_NAME..."
-
-    cat <<EOF | sudo tee "$SERVICE_PATH" > /dev/null
+path = pathlib.Path(sys.argv[1])
+source = path.read_text()
+key, value, sep = ('maxsize', '60M', ' ') if path.name == 'logrotate.conf' else ('LOG_DISK_SIZE', '256M', '=')
+pattern = rf'(?m)^[ \t]*{key}[ \t]*{re.escape(sep)}.*$'
+line = f'{key}{sep}{value}'
+source = re.sub(pattern, lambda _: line, source) if re.search(pattern, source) else source.rstrip() + '\n' + line + '\n'
+pathlib.Path(sys.argv[2]).write_text(source)
+PY
+        install_managed "$StageDir/log-config" "$file" 0644 root
+    done
+    if [[ -f /proc/device-tree/model ]] && grep -aq '^Raspberry' /proc/device-tree/model \
+        && [[ -d /sys/class/net/wlan0 ]]; then
+        file=/etc/systemd/system/wifi-powersave-off.service
+        if [[ ! -e $file ]]; then
+            cat > "$StageDir/wifi-powersave-off.service" <<'UNIT'
 [Unit]
 Description=Disable WiFi Power Save Mode
 After=network-online.target
@@ -572,412 +859,316 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/sbin/iw dev wlan0 set power_save off
+ExecStart=/usr/sbin/iw dev wlan0 set power_save off
 RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
-EOF
+UNIT
+            sed -i "s|/usr/sbin/iw|$(command -v iw)|" "$StageDir/wifi-powersave-off.service"
+            install_managed "$StageDir/wifi-powersave-off.service" "$file" 0644 root
+        fi
+        sudo -n systemctl daemon-reload
+        sudo -n systemctl enable wifi-powersave-off.service
+        sudo -n systemctl start wifi-powersave-off.service || warn 'Could not disable WiFi power saving now; service is enabled for boot.'
+    else
+        echo 'Skipping WiFi power-save service: no Raspberry Pi wlan0 interface.'
+    fi
+    echo 'log2ram size changes take effect at the next reboot.'
+}
 
-    sudo systemctl daemon-reexec
-    sudo systemctl daemon-reload
-    sudo systemctl enable "$SERVICE_NAME"
-    sudo systemctl start "$SERVICE_NAME"
+install_payload() {
+    local relative destination mode old
+    for relative in "${PythonFiles[@]}" data/bmi270_project/bmi270_demo data/ci2mqtt/ci_mqtt_bridge; do
+        destination="$PekawayDir/${relative#data/}"
+        mode=0644
+        [[ $relative != *.py ]] && mode=0755
+        install_managed "$StageDir/$relative" "$destination" "$mode"
+    done
+    # Configuration and state defaults are created only when missing.
+    [[ -e $PekawayDir/ci2mqtt/.env ]] || install_managed "$StageDir/data/ci2mqtt/.env" "$PekawayDir/ci2mqtt/.env" 0600
+    [[ -e $PekawayDir/pythonsqlite.db ]] || install_managed "$StageDir/misc/pythonsqlite.db" "$PekawayDir/pythonsqlite.db"
+    # $StageDir/config.txt was merged and reported during the checks step.
+    if [[ ! -e /boot/firmware/config.txt ]]; then
+        install_managed "$StageDir/misc/boot_config.txt" /boot/firmware/config.txt 0644 firmware
+    elif ! cmp -s /boot/firmware/config.txt "$StageDir/config.txt"; then
+        install_managed "$StageDir/config.txt" /boot/firmware/config.txt 0644 firmware
+        echo 'Boot configuration extended; the changes take effect after the reboot.'
+    fi
+    install_managed "$StageDir/misc/98-pekaway-tty.rules" /etc/udev/rules.d/98-pekaway-tty.rules 0644 root
+    install_managed "$StageDir/nginx/pekaway1" /etc/nginx/sites-available/pekaway1 0644 root
+    destination=/etc/nginx/sites-enabled/pekaway1
+    backup_target "$destination"
+    sudo -n ln -sfn /etc/nginx/sites-available/pekaway1 "$destination"
 
-    echo "$SERVICE_NAME installed and started."
-else
-    echo "$SERVICE_NAME already installed. Ensuring it's enabled and started..."
-    sudo systemctl enable "$SERVICE_NAME"
-    sudo systemctl start "$SERVICE_NAME"
-fi
+    local normal="PekawayTouch${TouchdisplayVersion}.tft" rotated="PekawayTouch${TouchdisplayVersion}_180.tft"
+    local required_kb available_kb
+    required_kb=$(du -ck "$StageDir/touchdisplay/$normal" "$StageDir/touchdisplay/$rotated" | tail -n 1 | awk '{print $1}')
+    required_kb=$((required_kb + 1024))
+    available_kb=$(df -Pk /boot/firmware | awk 'NR==2 {print $4}')
+    if (( available_kb <= required_kb )); then
+        # Small boot partitions: remove the previous display firmware first.
+        # Every removed file is in the backup and is restored on failure.
+        echo "Only ${available_kb} KiB free in /boot/firmware (${required_kb} KiB needed); removing previous display firmware first."
+        for old in /boot/firmware/PekawayTouch*.tft; do
+            [[ -e $old ]] || continue
+            backup_target "$old"
+            sudo -n rm -f -- "$old"
+        done
+        available_kb=$(df -Pk /boot/firmware | awk 'NR==2 {print $4}')
+        (( available_kb > required_kb )) || \
+            die "Insufficient space in /boot/firmware: ${available_kb} KiB free, ${required_kb} KiB required for both display files."
+    fi
+    install_managed "$StageDir/touchdisplay/$normal" "/boot/firmware/$normal" 0644 firmware
+    install_managed "$StageDir/touchdisplay/$rotated" "/boot/firmware/$rotated" 0644 firmware
+    # Only remove obsolete Pekaway firmware after BOTH replacements succeeded.
+    for old in /boot/PekawayTouch*.tft /boot/firmware/PekawayTouch*.tft; do
+        [[ -e $old ]] || continue
+        [[ $old == "/boot/firmware/$normal" || $old == "/boot/firmware/$rotated" ]] && continue
+        backup_target "$old"
+        sudo -n rm -f -- "$old"
+    done
+    install_managed "$StageDir/data/userdata/NSPanel/VanPI_NSPANEL.tft" "$PekawayDir/VanPI_NSPANEL.tft"
+    install_managed "$StageDir/data/userdata/NSPanel/VanPI_NSPANEL.tft" "$PekawayDir/userdata/NSPanel/VanPI_NSPANEL${NSPanelVersion}.tft"
+    install_managed "$StageDir/data/userdata/NSPanel/autoexec.be" "$PekawayDir/autoexec.be"
+    install_managed "$StageDir/data/userdata/NSPanel/autoexec.be" "$PekawayDir/userdata/NSPanel/autoexec.be"
+}
 
-show_progress "backing up flows"
+launch_dashboard_worker() {
+    # A child of nodered.service would be killed when that service is stopped.
+    # Start a separate systemd unit, with a stable snapshot of this script.
+    sudo -n true || die 'Dashboard updates require passwordless sudo.'
+    command -v systemd-run >/dev/null || die 'systemd-run is required for dashboard updates.'
+    local snapshot unit
+    mkdir -p "$PekawayDir/nrbackups"
+    snapshot=$(mktemp "$PekawayDir/nrbackups/updatescript-${Version}-XXXXXX.sh")
+    cp -- "${BASH_SOURCE[0]}" "$snapshot"
+    chmod 0700 "$snapshot"
+    unit="pekaway-update-$(date +%Y%m%d%H%M%S)-$$"
+    sudo -n systemd-run --quiet --collect --unit="$unit" \
+        --uid="$(id -u)" --gid="$(id -g)" --working-directory="$HOME" \
+        --setenv="HOME=$HOME" --setenv="USER=$(id -un)" \
+        --setenv='PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' \
+        /bin/bash "$snapshot" node-red-auto-update --worker
+    echo "Update started as $unit; progress: $Progress"
+}
 
-# remove downloaded files
-rm -f ~/pekaway/packages.txt && rm -f ~/pekaway/package.json && rm -f ~/pekaway/piplist.txt
+main() {
+    (( EUID != 0 )) || die 'Run as pi with sudo permissions, not as root or with sudo bash.'
+    case "${1:-}" in
+        node-red-auto-update)
+            AutoUpdate=true
+            if [[ ${2:-} != --worker ]]; then launch_dashboard_worker; return; fi
+            ;;
+        '') ;;
+        *) die "Unknown argument: $1" ;;
+    esac
+    sudo -n true || die 'Passwordless sudo is required for this updater.'
+    local command
+    for command in python3 node npm wget flock dpkg; do
+        command -v "$command" >/dev/null || die "Required command not found: $command"
+    done
+    [[ -d $PekawayDir && -d $NodeRedDir && -d /boot/firmware ]] || die 'Existing VanPi installation and /boot/firmware are required.'
+    [[ -f $NodeRedDir/settings.js && -f $NodeRedDir/flows_pekaway.json && -f $NodeRedDir/package.json ]] || die 'Node-RED settings, flows or package.json are missing.'
+    exec 9> "$PekawayDir/.update.lock"
+    flock -n 9 || die 'Another VanPi update is already running.'
 
-# backup Node-RED flows
-echo "backing up original Node-RED flows"
-cd ~/pekaway/nrbackups
-cp ~/.node-red/flows_pekaway.json "flows_pekaway_$(date +%d-%m-%Y_%I:%M:%S%p).json"
-
-# Define the path to the Node-RED settings.js file
-NR_SETTINGS_FILE="$HOME/.node-red/settings.js"
-
-enable_context_storage() {
-    local settings_file="$1"
-    local tmp_file
-
-    tmp_file="$(mktemp /tmp/contextStorage.XXXXXX.js)"
-
-    if python3 - "$settings_file" "$tmp_file" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-settings_path = Path(sys.argv[1])
-output_path = Path(sys.argv[2])
-
-lines = settings_path.read_text().splitlines(True)
-
-context_start_re = re.compile(r'^([ \t]*)(?://[ \t]*)?contextStorage:[ \t]*\{[ \t]*$')
-flush_re = re.compile(r'^([ \t]*)(?://[ \t]*)?flushInterval:[ \t]*([0-9]+)([ \t]*,?[ \t]*)$')
-insertion_re = re.compile(r'^[ \t]*(exportGlobalContextKeys:|externalModules:)')
-
-
-def brace_delta(line: str) -> int:
-    stripped = re.sub(r'^[ \t]*//[ \t]*', '', line)
-    return stripped.count('{') - stripped.count('}')
-
-
-def is_commented(line: str) -> bool:
-    return re.match(r'^[ \t]*//', line) is not None
-
-
-def emit_context_storage(indent: str) -> list[str]:
-    return [
-        f"{indent}contextStorage: {{\n",
-        f"{indent}    default: {{\n",
-        f"{indent}        module:\"localfilesystem\",\n",
-        f"{indent}        config: {{\n",
-        f"{indent}            flushInterval: 3600\n",
-        f"{indent}        }}\n",
-        f"{indent}    }}\n",
-        f"{indent}}},\n",
-    ]
-
-
-out = []
-i = 0
-seen_context_storage = False
-inserted_context_storage = False
-
-while i < len(lines):
-    line = lines[i]
-    start_match = context_start_re.match(line)
-
-    if start_match:
-        seen_context_storage = True
-        indent = start_match.group(1)
-        commented_start = is_commented(line)
-
-        block = [line]
-        depth = 1
-        j = i + 1
-        while j < len(lines) and depth > 0:
-            block_line = lines[j]
-            block.append(block_line)
-            depth += brace_delta(block_line)
-            j += 1
-
-        if depth != 0:
-            raise SystemExit("unbalanced braces in contextStorage block")
-
-        flush_indices = []
-        flush_value = None
-        flush_indent = ""
-        for idx, block_line in enumerate(block):
-            flush_match = flush_re.match(re.sub(r'^[ \t]*//[ \t]*', '', block_line))
-            if flush_match:
-                flush_indices.append(idx)
-                if flush_value is None:
-                    flush_value = flush_match.group(3)
-                    flush_indent = flush_match.group(1)
-
-        if commented_start:
-            out.extend(emit_context_storage(indent))
-        elif len(flush_indices) == 1 and flush_value == "3600":
-            out.extend(block)
-        elif len(flush_indices) == 1:
-            updated_block = list(block)
-            suffix = flush_match.group(3) if flush_match else ""
-            updated_block[flush_indices[0]] = f"{flush_indent}flushInterval: 3600{suffix}\n"
-            out.extend(updated_block)
-        else:
-            out.extend(emit_context_storage(indent))
-
-        i = j
-        continue
-
-    if not seen_context_storage and not inserted_context_storage and insertion_re.match(line):
-        indent_match = re.match(r'^([ \t]*)', line)
-        indent = indent_match.group(1) if indent_match else ""
-        out.extend(emit_context_storage(indent))
-        inserted_context_storage = True
-
-    out.append(line)
-    i += 1
-
-if not seen_context_storage and not inserted_context_storage:
-    raise SystemExit("could not locate an insertion point for contextStorage")
-
-output_path.write_text("".join(out))
-PY
-    then
-        if node --check "$tmp_file" >/dev/null 2>&1; then
-            mv "$tmp_file" "$settings_file"
-        else
-            rm -f "$tmp_file"
-            return 1
+    local os_major os_id kernel python_version current_version normalized_current normalized_target
+    # shellcheck source=/dev/null
+    os_id=$(. /etc/os-release; printf '%s' "$ID")
+    [[ $os_id == debian || $os_id == raspbian ]] || die 'Debian/Raspberry Pi OS is required.'
+    # shellcheck source=/dev/null
+    os_major=$(. /etc/os-release; printf '%s' "${VERSION_ID%%.*}")
+    if [[ ! $os_major =~ ^[0-9]+$ ]] || (( os_major < 12 )); then
+        die 'Debian/Raspberry Pi OS 12 or newer is required.'
+    fi
+    kernel=$(uname -r); kernel=${kernel%%-*}
+    python_version=$(python3 -c 'import platform; print(platform.python_version())')
+    version_greater_equal "$kernel" "$MIN_KERNEL_VERSION" || die "Kernel $MIN_KERNEL_VERSION or newer required."
+    version_greater_equal "$python_version" "$MIN_PYTHON_VERSION" || die "Python $MIN_PYTHON_VERSION or newer required."
+    current_version=$(cat "$PekawayDir/version" 2>/dev/null || true)
+    normalized_target=$(normalize_version "$Version")
+    if normalized_current=$(normalize_version "$current_version"); then
+        echo "Current version: $current_version; update target: $Version"
+        if [[ $AutoUpdate != true ]] && version_greater_equal "$normalized_current" "$normalized_target"; then
+            confirm "Install $Version over $current_version?" || return 0
         fi
     else
-        rm -f "$tmp_file"
-        return 1
+        echo "No valid current version found; preparing installation of $Version."
     fi
-}
 
-normalize_function_global_context() {
-    local settings_file="$1"
-    local tmp_file
-
-    tmp_file="$(mktemp /tmp/functionGlobalContext.XXXXXX.js)"
-
-    if awk -f - "$settings_file" > "$tmp_file" <<'AWK'
-BEGIN {
-    in_fgc = 0
-    fgc_indent = ""
-}
-
-{
-    if (!in_fgc && $0 ~ /^[[:space:]]*functionGlobalContext:[[:space:]]*\{[[:space:]]*$/) {
-        match($0, /^[[:space:]]*/)
-        fgc_indent = substr($0, 1, RLENGTH)
-        in_fgc = 1
-        print
-        next
-    }
-
-    if (in_fgc) {
-        if ($0 ~ /^[[:space:]]*\},[[:space:]]*$/) {
-            print fgc_indent "    zlib:require('zlib'),"
-            print
-            in_fgc = 0
-            next
-        }
-
-        if ($0 ~ /^[[:space:]]*(\/\/[[:space:]]*)?zlib:[[:space:]]*require\('zlib'\)[[:space:]]*,?[[:space:]]*$/) {
-            next
-        }
-    }
-
-    print
-}
-AWK
-    then
-        mv "$tmp_file" "$settings_file"
+    mkdir -p "$PekawayDir/nrbackups" "$PekawayDir/pkwUpdate"
+    BackupDir=$(mktemp -d "$PekawayDir/nrbackups/update-${Version}-$(date +%Y%m%d-%H%M%S)-XXXXXX")
+    chmod 0700 "$BackupDir"
+    StageDir=$(mktemp -d "$PekawayDir/.update-XXXXXX")
+    # Log maintenance, progress and logging are best effort: a full log disk
+    # must not itself stop the update. The persistent copy is preferred.
+    local var_log_file="/var/log/pekaway-update_$(date +%Y_%m_%d-%H_%M_%S).log" var_log_enabled=false
+    local maintenance_log="$BackupDir/log-maintenance.log" persistent_log="$BackupDir/update.log"
+    local -a log_destinations=()
+    if : > "$maintenance_log"; then
+        prepare_log_storage /var/log >> "$maintenance_log" 2>&1 || \
+            warn "Log preparation encountered an error; see $maintenance_log."
     else
-        rm -f "$tmp_file"
-        return 1
+        warn 'Cannot create the log maintenance file; attempting log preparation without it.'
+        prepare_log_storage /var/log || warn 'Log preparation encountered an error.'
     fi
-}
-
-validate_nr_settings() {
-    local settings_file="$1"
-
-    node --check "$settings_file" >/dev/null 2>&1
-}
-
-# Check if the settings.js file exists
-if [ ! -f "$NR_SETTINGS_FILE" ]; then
-    echo "The settings.js file does not exist at $NR_SETTINGS_FILE. Exiting."
-    exit 1
-fi
-
-NR_SETTINGS_BACKUP="$(mktemp)"
-cp -p "$NR_SETTINGS_FILE" "$NR_SETTINGS_BACKUP"
-
-if ! enable_context_storage "$NR_SETTINGS_FILE"; then
-    echo "Failed to update contextStorage in settings.js. Restoring original file and aborting..."
-    cp -p "$NR_SETTINGS_BACKUP" "$NR_SETTINGS_FILE"
-    rm -f "$NR_SETTINGS_BACKUP"
-    exit 1
-fi
-
-if grep -q "^[[:space:]]*functionGlobalContext:" "$NR_SETTINGS_FILE"; then
-    echo "Found functionGlobalContext in settings.js."
-    echo "Ensuring zlib is present exactly once in functionGlobalContext..."
-    if ! normalize_function_global_context "$NR_SETTINGS_FILE"; then
-        echo "Failed to normalize functionGlobalContext. Restoring original file and aborting..."
-        cp -p "$NR_SETTINGS_BACKUP" "$NR_SETTINGS_FILE"
-        rm -f "$NR_SETTINGS_BACKUP"
-        exit 1
+    LOG_FILE='unavailable; see service journal or console'
+    if printf 'Initializing update log...\n' >> "$persistent_log"; then
+        LOG_FILE=$persistent_log
+        log_destinations+=("$persistent_log")
+    else
+        warn "Cannot write $persistent_log; continuing without this log copy."
     fi
-    echo "functionGlobalContext normalized."
-else
-    echo "functionGlobalContext not found. Adding it with the desired entries..."
+    if ! sudo -n touch "$Progress" || ! sudo -n chmod 0644 "$Progress" || \
+       ! printf 'Starting update...\n' | sudo -n tee "$Progress" >/dev/null; then
+        warn "Cannot write dashboard progress to $Progress; using the backup directory."
+        Progress="$BackupDir/update-progress.log"
+    fi
+    if sudo -n touch "$var_log_file" && \
+       sudo -n chown "$(id -u):$(id -g)" "$var_log_file" && \
+       sudo -n chmod 0644 "$var_log_file" && \
+       printf 'Initializing update log...\n' >> "$var_log_file"; then
+        var_log_enabled=true
+        log_destinations+=("$var_log_file")
+        if [[ $LOG_FILE != "$persistent_log" ]]; then LOG_FILE=$var_log_file; fi
+    else
+        warn "Cannot write $var_log_file; continuing without this log copy."
+    fi
+    # Keep draining the pipe even if every tee output fails, avoiding SIGPIPE.
+    exec > >(tee -p -a "${log_destinations[@]}" || cat >/dev/null) 2>&1
+    trap 'echo "Update failed at line $LINENO (exit $?)." >&2' ERR
+    trap finish EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    if [[ -f $maintenance_log ]]; then
+        cat "$maintenance_log" || warn "Cannot read $maintenance_log."
+    fi
+    write_progress "PID=$$"
+    # Give the existing dashboard file watcher time to read the PID-only entry.
+    sleep 7
+    echo "Log: $LOG_FILE; file backups: $BackupDir"
+    if [[ $var_log_enabled == true && $LOG_FILE != "$var_log_file" ]]; then
+        echo "Additional log copy: $var_log_file"
+    fi
+    echo 'Existing SQLite data and CI-bridge settings will be preserved.'
+    echo 'The boot config only receives missing VanPi settings; existing lines are kept.'
 
-    # Build the functionGlobalContext block dynamically
-    CONTEXT_BLOCK="functionGlobalContext: {\n"
-    CONTEXT_BLOCK+="    zlib:require('zlib'),\n"
-    CONTEXT_BLOCK+="},"
-
-    # Add the block at the end of the file
-    echo -e "\n$CONTEXT_BLOCK" >> "$NR_SETTINGS_FILE"
-
-    echo "functionGlobalContext added with the desired entries."
-fi
-
-if ! validate_nr_settings "$NR_SETTINGS_FILE"; then
-    echo "settings.js failed syntax validation after updates. Restoring original file and aborting..."
-    cp -p "$NR_SETTINGS_BACKUP" "$NR_SETTINGS_FILE"
-    rm -f "$NR_SETTINGS_BACKUP"
-    exit 1
-fi
-
-rm -f "$NR_SETTINGS_BACKUP"
-
-
-# extract user flows from original flows.json file
-echo "Extracting user flows from flows_pekaway.json to extracted_user_flows.json in NR folder"
-jq '
-. as $all |
-
-($all | map(select(.type == "tab" and (.label | test(".*user\\s*flow.*"; "i"))))) as $tabs |
-
-($tabs | map(.id)) as $tab_ids |
-
-($all | map(select(.z != null and (.z as $z | $tab_ids | index($z))))) as $nodes |
-
-($nodes | map(select(.group? != null) | .group)) as $group_ids |
-
-($all | map(select(.type == "ui_group" and (.id as $id | $group_ids | index($id))))) as $groups |
-
-($groups | map(.tab)) as $ui_tab_ids |
-
-($all | map(select(.type == "ui_tab" and (.id as $id | $ui_tab_ids | index($id))))) as $ui_tabs |
-
-$tabs + $nodes + $groups + $ui_tabs
-' ~/.node-red/flows_pekaway.json > ~/.node-red/extracted_user_flows.json
-
-echo "Extracting *-config nodes from flows_pekaway.json to extracted_config_flows.json in NR folder"
-jq '[ .[] | select(.type | type == "string" and endswith("-config")) ]' \
-  ~/.node-red/flows_pekaway.json > ~/.node-red/extracted_config_flows.json
-
-cp ~/.node-red/flows_pekaway.json ~/.node-red/.flows_pekaway.json.bkp
-
-# Download new flows and replace the old file
-sleep 3
-show_progress "getting new flows"
-echo "Replacing local flows.json file with the new one from the server"
-cd ~/pekaway/pkwUpdate/
-wget_retry "${LfsServerFiles}node-red/flows_pekaway.json"
-
-# Check for failures
-flows_success=true
-if [ ! -f "flows_pekaway.json" ]; then
-    echo "The file flows_pekaway.json failed to download."
-    failed_downloads+=("flows_pekaway.json")
-    flows_success=false
-fi
-
-if [ ${#failed_downloads[@]} -gt 0 ]; then
-    echo "The following files failed to download:"
-    for file in "${failed_downloads[@]}"; do
-        echo "  - $file"
+    show_progress 'downloading and validating update files'
+    local relative
+    for relative in packages.txt piplist.txt "${PythonFiles[@]}" \
+        data/bmi270_project/bmi270_demo data/ci2mqtt/ci_mqtt_bridge data/ci2mqtt/.env \
+        data/userdata/NSPanel/autoexec.be misc/boot_config.txt misc/98-pekaway-tty.rules \
+        misc/pythonsqlite.db nginx/pekaway1; do
+        download_file "$relative"
     done
-fi
+    for relative in node-red/package.json node-red/flows_pekaway.json \
+        data/userdata/NSPanel/VanPI_NSPANEL.tft \
+        "touchdisplay/PekawayTouch${TouchdisplayVersion}.tft" \
+        "touchdisplay/PekawayTouch${TouchdisplayVersion}_180.tft"; do
+        download_file "$relative" lfs
+    done
+    validate_downloads
 
-# Decision based on flows_pekaway.json status
-if [ "$flows_success" = true ]; then
-    # Proceed with updating the flows file
-    cp ~/pekaway/pkwUpdate/flows_pekaway.json ~/.node-red/flows_pekaway.json
-    echo "Flows file replaced successfully."
-else
-    echo "Critical: flows_pekaway.json failed to download. Please check the logfile for details."
-    echo "Aborting Node-RED restart and script execution."
-    echo "Logfile: ${LOG_FILE}"
-    show_progress "Error, see logfile"
-    sleep 3
-    exit 1
-fi
+    show_progress 'checking boot, Node-RED settings and package changes'
+    if [[ -e /boot/firmware/config.txt ]]; then
+        merge_boot_config /boot/firmware/config.txt "$StageDir/misc/boot_config.txt" "$StageDir/config.txt"
+    fi
+    prepare_settings "$NodeRedDir/settings.js" "$StageDir/settings.js"
+    node --check "$StageDir/settings.js"
+    python3 - "$NodeRedDir/package.json" "$StageDir/node-red/package.json" "$StageDir/package.json" <<'PY'
+import json
+import pathlib
+import sys
 
-# Merge flows_pekaway.json with extracted_user_flows.json AND extracted_config_flows.json
-echo "Merging flows_pekaway.json with extracted_user_flows.json and extracted_config_flows.json, saving as merged_flows.json"
+old, new = [json.loads(pathlib.Path(p).read_text(encoding='utf-8-sig')) for p in sys.argv[1:3]]
+dependencies = old.get('dependencies', {})
+if not isinstance(dependencies, dict):
+    raise SystemExit('Existing package.json dependencies must be an object')
+extra = sorted(set(dependencies) - set(new['dependencies']))
+new['dependencies'] = {**dependencies, **new['dependencies']}
+pathlib.Path(sys.argv[3]).write_text(json.dumps(new, indent=2) + '\n')
+print('Preserving additional user modules:', ', '.join(extra) or '(none)')
+PY
+    # Validate before stopping services; recompute after stopping Node-RED so
+    # a last-second deploy is included in the actual installation.
+    merge_flows "$NodeRedDir/flows_pekaway.json" "$StageDir/node-red/flows_pekaway.json" "$StageDir/flows_pekaway.json"
 
-# Ensure extracted files are valid JSON (arrays, possibly empty)
-if jq empty ~/.node-red/extracted_user_flows.json >/dev/null 2>&1 && \
-   jq empty ~/.node-red/extracted_config_flows.json >/dev/null 2>&1; then
+    show_progress 'backing up and stopping Node-RED'
+    if sudo -n systemctl is-active --quiet nodered.service; then NodeRedWasActive=true; fi
+    backup_target "$NodeRedDir/settings.js"
+    backup_target "$NodeRedDir/package.json"
+    backup_target "$NodeRedDir/package-lock.json"
+    [[ ! -e $NodeRedDir/flows_pekaway_cred.json ]] || cp -p "$NodeRedDir/flows_pekaway_cred.json" "$BackupDir/flows_pekaway_cred.json"
+    NodeRedStopped=true
+    sudo -n systemctl stop nodered.service
+    backup_target "$NodeRedDir/flows_pekaway.json"
+    merge_flows "$NodeRedDir/flows_pekaway.json" "$StageDir/node-red/flows_pekaway.json" "$StageDir/flows_pekaway.json"
 
-    # We pass FOUR files into jq:
-    # 0: new flows (already downloaded & copied)
-    # 1: extracted user flows from old file
-    # 2: extracted *-config nodes from old file
-    # 3: backup of old flows (for ordering only)
-    jq -s '
-      # $all[0] = new flows
-      # $all[1] = userflows_old
-      # $all[2] = configs_old
-      # $all[3] = old_backup (ordering template)
+    show_progress 'installing system packages'
+    install_system_packages
 
-      . as $all
-      | ($all[0] + $all[1] + $all[2]) as $combined
-      | $combined
-      | unique_by(.id)                             # NEW flows win (they are first in +)
-      as $union
-      | ($all[3] | map(.id)) as $old_ids          # id order from backup
-      | $union
-      | sort_by(
-          (.id as $id
-           | ($old_ids | index($id)) // 100000000 # old order if known, else big number (end)
-          )
+    show_progress 'installing Python packages and verifying MQTT v2'
+    install_python_packages
+
+    show_progress 'installing Node-RED modules'
+    install_node_red_modules
+
+    show_progress 'installing Python scripts and both display firmware files'
+    install_payload
+
+    show_progress 'updating input defaults'
+    prepare_input_defaults
+
+    show_progress 'configuring log limits and WiFi power saving'
+    configure_logs_and_wifi
+
+    show_progress 'installing validated Node-RED settings and merged flows'
+    install_managed "$StageDir/settings.js" "$NodeRedDir/settings.js"
+    install_managed "$StageDir/flows_pekaway.json" "$NodeRedDir/flows_pekaway.json"
+
+    show_progress 'validating and reloading system services'
+    sudo -n nginx -t
+    sudo -n systemctl reload nginx
+    sudo -n udevadm control --reload-rules
+    sudo -n udevadm trigger
+
+    show_progress 'starting Node-RED and checking service state'
+    # Node-RED reads these files during startup. They remain part of the rollback
+    # until the new service has passed its health check.
+    printf '%s\n' "$Version" > "$StageDir/version"
+    printf '1\n' > "$StageDir/update"
+    install_managed "$StageDir/version" "$PekawayDir/version"
+    install_managed "$StageDir/update" "$PekawayDir/update"
+    sudo -n systemctl start nodered.service
+    wait_for_node_red
+
+    show_progress 'recording successful update'
+    report_package_failures
+    UpdateComplete=true
+    NodeRedStopped=false
+    echo "Update to $Version completed. Backups: $BackupDir"
+    if (( ${#PackageFailures[@]} > 0 )); then
+        local warning_summary
+        warning_summary=$(
+            echo 'Update completed with package warnings:'
+            printf '%s\n' "${PackageFailures[@]}"
+            printf 'Warning file, if writable: %s; full log: %s\n' "$BackupDir/package-failures.log" "$LOG_FILE"
         )
-    ' \
-      ~/.node-red/flows_pekaway.json \
-      ~/.node-red/extracted_user_flows.json \
-      ~/.node-red/extracted_config_flows.json \
-      ~/.node-red/.flows_pekaway.json.bkp \
-      > ~/.node-red/merged_flows.json && \
-    rm ~/.node-red/flows_pekaway.json ~/.node-red/extracted_user_flows.json ~/.node-red/extracted_config_flows.json && \
-    mv ~/.node-red/merged_flows.json ~/.node-red/flows_pekaway.json
-else
-    echo "Warning: extracted_user_flows.json or extracted_config_flows.json is not valid JSON. Skipping merge."
-    rm -f ~/.node-red/extracted_user_flows.json ~/.node-red/extracted_config_flows.json
+        write_progress "$warning_summary"
+    else
+        sudo -n truncate -s 0 "$Progress" || warn "Could not clear progress at $Progress."
+    fi
+    if [[ $AutoUpdate == true ]]; then
+        echo 'Rebooting automatically after dashboard update.'
+        sudo -n systemctl reboot || warn 'Update succeeded, but automatic reboot failed. Reboot manually.'
+    elif [[ -t 0 ]] && confirm 'Update complete. Reboot now?'; then
+        sudo -n systemctl reboot || warn 'Update succeeded, but reboot failed. Reboot manually.'
+    else
+        echo 'Node-RED is running. Reboot later to apply all system changes.'
+    fi
+}
+
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+    main "$@"
 fi
-
-
-# Clean up and proceed with the rest of the script
-rm ~/pekaway/pkwUpdate/flows_pekaway.json
-sleep 3
-echo "Replacing version number of VanPi OS"
-# Replace version number
-echo ${Version} >| ~/pekaway/version
-# Set update = true to show up when opening dashboard
-echo "1" >| ~/pekaway/update
-show_progress "restarting Node-RED..."
-sleep 5
-sudo truncate -s 0 ${Progress}
-
-# Inform the user about non-critical failed downloads
-if [ ${#failed_downloads[@]} -gt 0 ]; then
-    echo "Some non-critical files failed to download. Please check the logfile for details."
-    echo "Logfile: ${LOG_FILE}"
-fi
-
-# Reboot or inform the user
-if [[ "$1" == "node-red-auto-update" ]]; then
-    echo -e "Not asking for confirmation, rebooting automatically."
-    sleep 3
-    sudo reboot
-else
-    while true; do
-        read -r -p "Do you want to reboot now? [y/n] " input
-        case $input in
-            [yY][eE][sS]|[yY])
-                sudo reboot
-                break
-                ;;
-            [nN][oO]|[nN])
-                echo "Reboot cancelled. Please remember to reboot for the VanPi system to work properly!"
-                break
-                ;;
-            *)
-                echo "Invalid input... please type 'y' (yes) or 'n' (no)"
-                ;;
-        esac
-    done
-fi
-
-# If no reboot, restart Node-RED
-echo "No reboot, will try to restart Node-RED service..."
-sudo systemctl restart nodered.service
-echo "Exiting now. Bye Bye!"

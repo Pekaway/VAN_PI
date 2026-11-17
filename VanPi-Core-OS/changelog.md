@@ -1,3 +1,42 @@
+# Update 2.1.2 (Nov 2026)
+- Reworked Autoterm 2D/4D control and dashboards
+  - Improved temperature control and heating pause when the target is reached
+  - Added Twin Boost Start for dual-heater operation
+  - Added automatic burn-off based on operating hours and improved full-power time tracking
+- Reworked Webasto Air Top Evo W-Bus control
+  - Added dedicated heating, ventilation and timer controls
+  - Improved operating-state, diagnostic and command feedback on the dashboard and touch display
+  - Added manual fault-memory reading and confirmed clearing with read-back verification
+- Added Pekaway Power Unit ULTRA integration
+  - Battery, solar, shore power, alternator and inverter status and controls
+  - BLE device search, bridge control and configurable autostart
+  - Power history and persistent daily energy balances
+  - Added touch-display and app API support
+  - Disabling Power Unit now stops its bridge and scan; enabling it respects the autostart setting
+- Added Airpathsolutions Air Splitter control
+  - Percentage setpoint, configurable presets and electrical setpoint read-back
+  - Dashboard, touch-display and app API integration
+- Reworked digital input configuration
+  - Added short/long-press dual mode
+  - Added RGBW, heater, boiler automatic-mode and Power Unit inverter actions
+  - Reduced the MCP23017 input polling interval
+- Reworked vehicle orientation and leveling
+  - Added vehicle dimensions and leveling-ramp height configuration
+  - Added height differences and leveling recommendations in centimetres
+  - Reworked calibration and filtering; fixed BMI270 sensor initialization
+- Updated touch-display integration for display version 2.1.0
+  - Added automatic firmware update and 0/180-degree orientation support
+  - Added UART detection for ttyAMA0 and ttyS0
+  - Improved clock synchronization with NTP priority and offline display-time handling
+  - Added a configurable User Data example in the Example functions flow
+- Improved USB serial initialization, readiness checks and reconnect handling
+- Extended app/API data for new devices, Ruuvi humidity and vehicle leveling
+- Added JSON POST endpoints for Power Unit, Webasto and Air Splitter control through the LTE bridge
+- Improved Ruuvi BLE timeout handling and clean scanner shutdown
+- Updated ADC access for ADS1x15 library compatibility and increased wireless-shunt polling frequency
+- Fixed device visibility, boiler heater-shutdown routing and custom relay reporting
+- Changed default gamma value for dimmers from 2.2 to 1.8
+
 # Update 2.1.0 (10 July 2026)
 - reworked the VE.direct flow
     - supports usage of multiple MPPTs simultanously

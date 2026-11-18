@@ -16,8 +16,8 @@ MQTT topics (<base> = <topic prefix>/<device id>, e.g. pekaway/power_unit/4142b9
     <base>/result     command results: sent, confirmed, timeout, superseded or error
 
 BLE connection:
-    Startup runs rfkill unblock all (via sudo -n unless running as root), also
-    before --scan. This clears software blocks for all radios, including Wi-Fi.
+    Startup runs rfkill unblock bluetooth (via sudo -n unless running as root),
+    also before --scan. This preserves the Wi-Fi radio state.
     Failures are logged as warnings; BLE startup continues.
     The Linux default LE supervision timeout of 420 ms disconnects the link on
     short radio dropouts. --le-supervision-timeout (default 5 s) sets the kernel
@@ -97,6 +97,19 @@ PROTECTION_FLAGS = (
     ("ac_start_voltage_low", "ac_start_voltage_low", "AC startup voltage too low"),
     ("pv_overtemp", "pv_overtemp", "PV overtemperature"),
 )
+
+
+MESSAGE_SEVERITY_ORDER = {"error": 0, "warning": 1, "notice": 2}
+BMS_LEVEL_SEVERITY = {"soc_low": "notice", "thermal_runaway": "error"}
+# Some one-bit BMS protection fields are warnings in the user interface.
+BMS_WARNING_FLAGS = {
+    "smart_charger_failed",
+    "smart_discharger_failed",
+    "charge_mos_overtemp",
+    "discharge_mos_overtemp",
+    "low_voltage_charge_block",
+    "high_voltage_discharge_block",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -277,6 +290,46 @@ def label(name):
     return name.replace("_", " ")
 
 
+def classify_messages(status, batteries):
+    """Build active, user-facing messages from decoded Power Unit and BMS data."""
+    messages = []
+    pv_idle_without_input = (
+        not status["pv_charging_on"]
+        and status["pv_input_voltage"] == 0
+        and status["pv_charge_power"] == 0
+    )
+    for field, code, _ in PROTECTION_FLAGS:
+        if not status[field] or (code == "pv_output_overvoltage" and pv_idle_without_input):
+            continue
+        messages.append({
+            "source": "power_unit",
+            "code": code,
+            "severity": "error" if code == "inverter_short_circuit" else "warning",
+        })
+
+    for battery in batteries:
+        if not battery["fresh"]:
+            continue
+        for code, level in battery["warnings"].items():
+            messages.append({
+                "source": "bms",
+                "code": code,
+                "severity": BMS_LEVEL_SEVERITY.get(code, "warning"),
+                "battery_id": battery["id"],
+                "level": level,
+            })
+        for code in battery["faults"]:
+            messages.append({
+                "source": "bms",
+                "code": code,
+                "severity": "warning" if code in BMS_WARNING_FLAGS else "error",
+                "battery_id": battery["id"],
+            })
+
+    messages.sort(key=lambda message: MESSAGE_SEVERITY_ORDER[message["severity"]])
+    return messages
+
+
 def make_status(snapshot, device_id, now=None):
     """Status JSON (schema 1), or None if there is no current data."""
     now = time.time() if now is None else now
@@ -345,6 +398,7 @@ def make_status(snapshot, device_id, now=None):
         "device": {"fan_on": s["fan_on"], "buzzer_enabled": s["buzzer_enabled"],
                    "display_sleep_enabled": s["display_sleep_enabled"]},
         "alerts": alerts,
+        "messages": classify_messages(status["values"], batteries),
         "pending": sorted(entry["command"] for entry in pending.values()),
     }
 
@@ -484,20 +538,20 @@ def ha_discovery(topics, device_id, address, ha_prefix):
 # Linux BLE parameters and HCI diagnostics
 # ---------------------------------------------------------------------------
 
-def unblock_radios():
-    """Clear software radio blocks without prompting or preventing BLE startup."""
-    command = ["rfkill", "unblock", "all"]
+def unblock_bluetooth():
+    """Clear Bluetooth software blocks without prompting or preventing BLE startup."""
+    command = ["rfkill", "unblock", "bluetooth"]
     if os.geteuid() != 0:
         command = ["sudo", "-n", *command]
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=5, check=False)
     except (OSError, subprocess.TimeoutExpired) as exc:
-        LOG.warning("Could not run rfkill unblock all: %s; continuing BLE startup", exc)
+        LOG.warning("Could not run rfkill unblock bluetooth: %s; continuing BLE startup", exc)
         return
     if result.returncode == 0:
-        LOG.info("rfkill unblock all completed (software radio blocks cleared)")
+        LOG.info("rfkill unblock bluetooth completed")
     else:
-        LOG.warning("rfkill unblock all failed: %s; continuing BLE startup",
+        LOG.warning("rfkill unblock bluetooth failed: %s; continuing BLE startup",
                     result.stderr.strip() or result.stdout.strip() or f"exit {result.returncode}")
 
 
@@ -1198,7 +1252,7 @@ def main(argv=None):
     # bleak is very verbose at debug level.
     logging.getLogger("bleak").setLevel(logging.WARNING)
     if args.scan:
-        unblock_radios()
+        unblock_bluetooth()
         LOG.info("Scanning for Power Units for %g s on %s ...", args.scan_time, args.adapter)
         try:
             devices = asyncio.run(scan_power_units(args.adapter, args.scan_time))
@@ -1218,7 +1272,7 @@ def main(argv=None):
              "Home Assistant %s", __version__, args.address, args.adapter, args.device_id, args.mqtt_host,
              args.mqtt_port, f"user {args.mqtt_username}" if args.mqtt_username else "anonymous", args.keepalive,
              f"discovery every {args.ha_interval:g} s" if args.ha_discovery else "off")
-    unblock_radios()
+    unblock_bluetooth()
     try:
         configure_le_supervision_timeout(args.adapter, args.le_supervision_timeout)
     except Exception as exc:

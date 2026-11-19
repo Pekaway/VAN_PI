@@ -3,6 +3,16 @@
 **Head over to** [links.pekaway.de](https://links.pekaway.de/downloads.html), download the latest precompiled image (it's a headless system, so no desktop environment) and flash it to your SD-card.
 Start up your Raspberry Pi, wait a few minutes for the boot process to finish and you're good to go.
 
+### Preparing a release image
+
+Download the installed version of `bluez-firmware` from the Raspberry Pi package archive before the **New Version** flow clears the APT cache. Run the flow on the source Pi and shrink the resulting image. On Linux, prepare a copy of the shrunk image using the downloaded package.
+
+```bash
+sudo bash VanPi-Core-OS/misc/prepare-image-bluetooth.sh release-copy.img bluez-firmware_VERSION_all.deb
+```
+
+The script restores the two Broadcom firmware files, verifies the package in the image, and enables onboard Bluetooth in the image's boot configuration. Flash the prepared image on a Pi 5 without a USB Bluetooth adapter and verify the controller address and a BLE scan before zipping and publishing the image.
+
 ## Manually Installing the VanPi System
 
 1. **Get a Raspberry Pi 4 or Raspberry Pi 5.**

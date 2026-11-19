@@ -304,7 +304,8 @@ PY
 }
 
 merge_flows() {
-    python3 - "$1" "$2" "$3" <<'PY'
+    python3 - "$1" "$2" "$3" "$4" <<'PY'
+import hashlib
 import json
 import pathlib
 import re
@@ -324,7 +325,8 @@ old_by_id = {n['id']: n for n in old}
 new_by_id = {n['id']: n for n in new}
 core_ids = set(new_by_id)
 tabs = {n['id'] for n in old if n.get('type') == 'tab' and re.search(r'user\s*flow', n.get('label', ''), re.I)}
-selected = {n['id'] for n in old if n['id'] in tabs or n.get('z') in tabs}
+user_ids = {n['id'] for n in old if n['id'] in tabs or n.get('z') in tabs}
+selected = set(user_ids)
 connection_types = {'mqtt-broker', 'tls-config', 'serial-port', 'zigbee2mqtt-server'}
 
 def config_node(node):
@@ -340,6 +342,12 @@ def strings(value):
         for item in value.values():
             yield from strings(item)
 
+def references(node):
+    yield from strings(node)
+    kind = node.get('type', '')
+    if kind.startswith('subflow:'):
+        yield kind[8:]
+
 # Preserve connection configuration, including types which do not end in -config.
 selected.update(n['id'] for n in old if config_node(n) and
                 (n.get('type') in connection_types or n.get('type', '').endswith('-config')))
@@ -347,39 +355,245 @@ pending = list(selected)
 while pending:
     ident = pending.pop()
     node = old_by_id[ident]
-    refs = list(strings(node))
-    kind = node.get('type', '')
-    if kind.startswith('subflow:'):
-        refs.append(kind[8:])
-    for ref in refs:
+    for ref in references(node):
         if ref in old_by_id and ref not in selected:
             dependency = old_by_id[ref]
-            if config_node(dependency) or dependency.get('type') == 'subflow':
+            if dependency.get('type') == 'subflow':
+                user_ids.add(ref)
+            if config_node(dependency) or ref in user_ids:
                 selected.add(ref)
                 pending.append(ref)
     if node.get('type') == 'subflow':
         for child in old:
             if child.get('z') == ident and child['id'] not in selected:
+                user_ids.add(child['id'])
                 selected.add(child['id'])
                 pending.append(child['id'])
 
-for ident in selected:
+# A node copied verbatim also needs a new ID when a reference changes,
+# for example when its parent user tab gets a new ID.
+shared_ids = user_ids & core_ids
+conflicts = {ident for ident in shared_ids if old_by_id[ident] != new_by_id[ident]}
+if conflicts:
+    dependents = {}
+    for ident in shared_ids - conflicts:
+        for ref in references(old_by_id[ident]):
+            if ref in shared_ids and ref != ident:
+                dependents.setdefault(ref, set()).add(ident)
+    pending = list(conflicts)
+    while pending:
+        added = dependents.get(pending.pop(), set()) - conflicts
+        conflicts.update(added)
+        pending.extend(added)
+
+user_ids_remapped = {}
+occupied = core_ids | old_by_id.keys()
+for ident in sorted(conflicts):
+    attempt = 0
+    while True:
+        alias = hashlib.sha256(f'vanpi-user-flow:{ident}:{attempt}'.encode()).hexdigest()[:16]
+        if alias not in occupied:
+            break
+        attempt += 1
+    user_ids_remapped[ident] = alias
+    occupied.add(alias)
+    print(f'Remapped user flow node {ident} to {alias}.')
+
+def remap_ref(value):
+    if isinstance(value, str):
+        return user_ids_remapped.get(value, value)
+    if isinstance(value, list):
+        return [remap_ref(item) for item in value]
+    if isinstance(value, dict):
+        return {key: remap_ref(item) for key, item in value.items()}
+    return value
+
+def remap_node(node):
+    if not user_ids_remapped:
+        return node
+    result = remap_ref(node)
+    kind = node.get('type', '')
+    if kind.startswith('subflow:'):
+        result['type'] = 'subflow:' + remap_ref(kind[8:])
+    return result
+
+retained = (selected - core_ids) | conflicts
+for ident in sorted(selected):
     saved = old_by_id[ident]
-    if ident not in new_by_id:
-        new_by_id[ident] = saved
+    if ident in retained:
+        new_by_id[remap_ref(ident)] = remap_node(saved)
     elif saved.get('type') in connection_types:
         if new_by_id[ident].get('type') != saved.get('type'):
             raise SystemExit(f'Configuration type conflict: {ident}')
-        new_by_id[ident] = {**new_by_id[ident], **saved}
-    elif saved != new_by_id[ident] and (ident in tabs or saved.get('z') in tabs):
-        raise SystemExit(f'User flow ID conflicts with a new core node: {ident}')
+        new_by_id[ident] = {**new_by_id[ident], **remap_node(saved)}
+
+if retained:
+    # Either side of a Node-RED link can hold the connection. Carry over links
+    # involving a retained node while keeping the links shipped with the Core.
+    link_partners = {'link in': 'link out', 'link out': 'link in'}
+    for old_node in old:
+        ident = old_node['id']
+        kind = old_node.get('type')
+        current_id = remap_ref(ident)
+        current = new_by_id.get(current_id, {})
+        if kind not in link_partners or current.get('type') != kind:
+            continue
+        for peer_id in old_node.get('links') or []:
+            if ident not in retained and peer_id not in retained:
+                continue
+            target_id = remap_ref(peer_id)
+            peer = new_by_id.get(target_id, {})
+            if peer.get('type') != link_partners[kind]:
+                continue
+            for node, link_id in ((current, target_id), (peer, current_id)):
+                links = node.get('links') or []
+                if link_id not in links:
+                    node['links'] = links + [link_id]
 
 # Keep new core ordering; append preserved user nodes in their previous order.
-order = [n['id'] for n in new] + [n['id'] for n in old if n['id'] not in core_ids and n['id'] in selected]
+order = [n['id'] for n in new] + [remap_ref(n['id']) for n in old if n['id'] in retained]
 result = [new_by_id[ident] for ident in order]
 pathlib.Path(sys.argv[3]).write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+pathlib.Path(sys.argv[4]).write_text(json.dumps(user_ids_remapped) + '\n', encoding='utf-8')
 print(f'Prepared {len(result)} nodes; preserved {len(tabs)} user tabs and their dependencies.')
 PY
+}
+
+prepare_flow_state() {
+    node - "$1" "$2" "$3" <<'JS'
+const crypto = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
+const [userDir, idMapPath, stage] = process.argv.slice(2);
+const readJson = file => JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
+const ids = readJson(idMapPath);
+if (Object.keys(ids).length === 0) process.exit(0);
+
+const settings = require(path.join(userDir, 'settings.js'));
+const credentialsFile = path.join(userDir, 'flows_pekaway_cred.json');
+const owns = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+const mapped = id => owns(ids, id) ? ids[id] : id;
+const mapScope = id => mapped(id) === id ? id.split('-').map(mapped).join('-') : mapped(id);
+
+function readCredentials() {
+    const stored = readJson(credentialsFile);
+    if (!owns(stored, '$')) return { entries: stored };
+
+    // Node-RED local filesystem credentials use an IV prefix and AES-256-CTR.
+    // Try the runtime key first, as Node-RED does when migrating to a user key.
+    const keyFiles = ['.config.runtime.json', '.config.runtime.json.backup', '.config.json'];
+    const secrets = [];
+    for (const filename of keyFiles.map(file => path.join(userDir, file))) {
+        try {
+            secrets.push(readJson(filename)._credentialSecret);
+        } catch (error) {
+            if (error.code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error;
+        }
+    }
+    secrets.push(settings.credentialSecret);
+    const payload = stored.$;
+    if (typeof payload === 'string' && /^[0-9a-f]{32}/i.test(payload)) {
+        const iv = Buffer.from(payload.slice(0, 32), 'hex');
+        for (const secret of new Set(secrets)) {
+            if (typeof secret !== 'string') continue;
+            const key = crypto.createHash('sha256').update(secret).digest();
+            try {
+                const decipher = crypto.createDecipheriv('aes-256-ctr', key, iv);
+                const decoded = decipher.update(payload.slice(32), 'base64', 'utf8') + decipher.final('utf8');
+                const entries = JSON.parse(decoded);
+                if (entries && typeof entries === 'object' && !Array.isArray(entries)) return { entries, key };
+            } catch {
+                // Try the next configured key. Never print credential data.
+            }
+        }
+    }
+    throw new Error('Cannot read encrypted Node-RED credentials for the ID migration');
+}
+
+function prepareCredentials() {
+    if (!fs.existsSync(credentialsFile)) return;
+    const { entries, key } = readCredentials();
+    const changes = Object.entries(ids).filter(([id]) => owns(entries, id));
+    if (changes.length === 0) return;
+    for (const [id, replacement] of changes) {
+        if (owns(entries, replacement)) throw new Error(`Credentials already exist for replacement ID ${replacement}`);
+        entries[replacement] = entries[id];
+        delete entries[id];
+    }
+    let prepared = entries;
+    if (key) {
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv('aes-256-ctr', key, iv);
+        const data = cipher.update(JSON.stringify(entries), 'utf8', 'base64') + cipher.final('base64');
+        prepared = { $: iv.toString('hex') + data };
+    }
+    fs.writeFileSync(path.join(stage, 'flows_pekaway_cred.json'), JSON.stringify(prepared) + '\n', { mode: 0o600 });
+    console.log(`Prepared credentials for ${changes.length} remapped Node-RED IDs.`);
+}
+
+function prepareContext() {
+    const roots = [path.join(userDir, 'context')];
+    for (const store of Object.values(settings.contextStorage || {})) {
+        if (typeof store === 'string' || store?.module === 'memory') continue;
+        if (store?.module !== 'localfilesystem') {
+            console.warn('Context in a custom Node-RED store may need to be migrated separately.');
+            continue;
+        }
+        const config = store.config || {};
+        roots.push(path.resolve(path.dirname(userDir), path.join(config.dir || userDir, config.base || 'context')));
+    }
+    const manifest = [];
+    const destinations = new Set();
+    const existingRoots = new Set(roots.filter(dir => fs.existsSync(dir)).map(dir => fs.realpathSync(dir)));
+    for (const root of existingRoots) {
+        for (const scope of fs.readdirSync(root, { withFileTypes: true })) {
+            if (!scope.isDirectory() || scope.name === 'global') continue;
+            const sourceDir = path.join(root, scope.name);
+            const targetDir = path.join(root, mapScope(scope.name));
+            for (const file of fs.readdirSync(sourceDir, { withFileTypes: true })) {
+                if (!file.isFile() || !file.name.endsWith('.json')) continue;
+                const name = file.name === 'flow.json' ? file.name : `${mapScope(file.name.slice(0, -5))}.json`;
+                const from = path.join(sourceDir, file.name);
+                const to = path.join(targetDir, name);
+                if (from === to) continue;
+                if (destinations.has(to) || fs.existsSync(to)) throw new Error(`Node-RED context already exists at ${to}`);
+                const prepared = path.join(stage, `flow-context-${manifest.length / 3}`);
+                fs.copyFileSync(from, prepared);
+                manifest.push(prepared, from, to);
+                destinations.add(to);
+            }
+        }
+    }
+    if (manifest.length) {
+        fs.writeFileSync(path.join(stage, 'flow-context-moves'), manifest.join('\0') + '\0');
+        console.log(`Prepared ${manifest.length / 3} Node-RED context files for migration.`);
+    }
+}
+
+try {
+    prepareCredentials();
+    prepareContext();
+} catch (error) {
+    console.error(error instanceof SyntaxError ? 'Invalid Node-RED state JSON during ID migration' : error.message);
+    process.exitCode = 1;
+}
+JS
+}
+
+install_flow_state() {
+    if [[ -f $StageDir/flows_pekaway_cred.json ]]; then
+        backup_target "$NodeRedDir/.config.runtime.json"
+        backup_target "$NodeRedDir/.config.runtime.json.backup"
+        install_managed "$StageDir/flows_pekaway_cred.json" "$NodeRedDir/flows_pekaway_cred.json" 0600
+    fi
+    if [[ -f $StageDir/flow-context-moves ]]; then
+        local prepared source destination
+        while IFS= read -r -d '' prepared && IFS= read -r -d '' source && IFS= read -r -d '' destination; do
+            backup_target "$source"
+            install_managed "$prepared" "$destination" 0600
+            rm -f -- "$source"
+        done < "$StageDir/flow-context-moves"
+    fi
 }
 
 prepare_settings() {
@@ -1092,7 +1306,8 @@ print('Preserving additional user modules:', ', '.join(extra) or '(none)')
 PY
     # Validate before stopping services; recompute after stopping Node-RED so
     # a last-second deploy is included in the actual installation.
-    merge_flows "$NodeRedDir/flows_pekaway.json" "$StageDir/node-red/flows_pekaway.json" "$StageDir/flows_pekaway.json"
+    merge_flows "$NodeRedDir/flows_pekaway.json" "$StageDir/node-red/flows_pekaway.json" \
+        "$StageDir/flows_pekaway.json" "$StageDir/flow-id-map.json"
 
     show_progress 'backing up and stopping Node-RED'
     if sudo -n systemctl is-active --quiet nodered.service; then NodeRedWasActive=true; fi
@@ -1103,7 +1318,9 @@ PY
     NodeRedStopped=true
     sudo -n systemctl stop nodered.service
     backup_target "$NodeRedDir/flows_pekaway.json"
-    merge_flows "$NodeRedDir/flows_pekaway.json" "$StageDir/node-red/flows_pekaway.json" "$StageDir/flows_pekaway.json"
+    merge_flows "$NodeRedDir/flows_pekaway.json" "$StageDir/node-red/flows_pekaway.json" \
+        "$StageDir/flows_pekaway.json" "$StageDir/flow-id-map.json"
+    prepare_flow_state "$NodeRedDir" "$StageDir/flow-id-map.json" "$StageDir"
 
     show_progress 'installing system packages'
     install_system_packages
@@ -1125,6 +1342,7 @@ PY
 
     show_progress 'installing validated Node-RED settings and merged flows'
     install_managed "$StageDir/settings.js" "$NodeRedDir/settings.js"
+    install_flow_state
     install_managed "$StageDir/flows_pekaway.json" "$NodeRedDir/flows_pekaway.json"
 
     show_progress 'validating and reloading system services'
